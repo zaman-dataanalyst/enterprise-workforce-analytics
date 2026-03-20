@@ -2,8 +2,8 @@ name: Enterprise Workforce Analytics Pipeline
 
 on:
   schedule:
-    - cron: '0 2 * * *'   # Daily 2:00 AM UTC
-  workflow_dispatch:        # Manual trigger button in GitHub Actions tab
+    - cron: '0 2 * * *'
+  workflow_dispatch:
 
 jobs:
   run-pipeline:
@@ -33,7 +33,7 @@ jobs:
       - name: Create GCP credentials file
         run: echo '${{ secrets.GCP_KEY_JSON }}' > gcp-key.json
 
-      - name: Run Bronze pipeline
+      - name: Run pipeline
         env:
           OXR_APP_ID: ${{ secrets.OXR_APP_ID }}
-        run: python python_etl/data_gen_v13_6.py
+        run: python python_etl/data_pipeline.py
