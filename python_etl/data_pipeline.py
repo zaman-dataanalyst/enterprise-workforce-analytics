@@ -395,8 +395,12 @@ def run_pipeline():
                     "department":  row["department"] if pd.notna(row["department"]) else "Unassigned",
                     "designation": row["designation"],
                 }
-            logging.info("STEP 2 | %s employees loaded from source table", f"{len(employees):,}")
-        else:
+            if df_emp.empty:
+                source_exists = False
+            else:
+                logging.info("STEP 2 | %s employees loaded from source table", f"{len(employees):,}")
+        
+        if not source_exists:
             logging.info("STEP 2 | First run — generating %s employees...", f"{TOTAL_EMPLOYEES:,}")
             for emp_id in range(1, TOTAL_EMPLOYEES + 1):
                 base_region   = random.choices(REGIONS, weights=REGION_WEIGHTS, k=1)[0]
@@ -458,8 +462,12 @@ def run_pipeline():
                 """
             ).to_dataframe()
             projects = df_proj.to_dict("records")
-            logging.info("STEP 3 | %s projects loaded from source table", f"{len(projects):,}")
-        else:
+            if not projects:
+                proj_exists = False
+            else:
+                logging.info("STEP 3 | %s projects loaded from source table", f"{len(projects):,}")
+
+        if not proj_exists:
             logging.info("STEP 3 | First run — generating dim_projects...")
             projects = [{
                 "project_id":     BENCH_PROJECT_ID,
