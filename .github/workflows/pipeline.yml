@@ -1,46 +1,42 @@
 name: Enterprise Workforce Analytics Pipeline
 
 on:
+  workflow_dispatch: # Manual button ke liye
   schedule:
-    - cron: '0 2 * * *' # Daily scheduled run at 02:00 UTC
-  workflow_dispatch: # Allows manual triggering from GitHub UI
+    - cron: '0 0 * * *' # Rozana raat 12 baje automatic run
 
 jobs:
-  run-pipeline:
+  build-and-run:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Checkout Repository Code
+        uses: actions/checkout@v3
 
-      - name: Setup Python 3.11
-        uses: actions/setup-python@v5
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
         with:
           python-version: '3.11'
 
-      - name: Install dependencies
+      - name: Install Professional Dependencies
         run: |
-          pip install \
-            google-cloud-bigquery \
-            google-cloud-storage \
-            pandas \
-            pandas-gbq \
-            requests \
-            faker \
-            tqdm \
-            python-dateutil \
-            db-dtypes
+          pip install pandas requests faker google-cloud-storage google-cloud-bigquery db-dtypes tqdm
 
-      # Create GCP key file from GitHub secret
-      - name: Authenticate GCP Service Account
+      - name: Authenticate to Google Cloud
+        # Ye step aapke secret JSON ko ek temporary file mein badal dega
         run: echo '${{ secrets.GCP_KEY_JSON }}' > gcp-key.json
 
-      # Set credentials path for GCP auth
-      - name: Set Google Application Credentials
-        run: echo "GOOGLE_APPLICATION_CREDENTIALS=$(pwd)/gcp-key.json" >> $GITHUB_ENV
-        
-      # Run ETL script with API key
-      - name: Run Data Ingestion
+      - name: Run Enterprise ETL Pipeline
         env:
+          # Yahan hum GitHub ki tijori se secrets nikaal kar Python ko de rahe hain
           OXR_APP_ID: ${{ secrets.OXR_APP_ID }}
-        run: python python_etl/data_pipeline.py
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          GOOGLE_APPLICATION_CREDENTIALS: gcp-key.json
+        run: |
+          # Tasalli kar lein ke path 'python_etl/data_pipeline.py' hi hai
+          python python_etl/data_pipeline.py
+
+      - name: Cleanup Security Keys
+        # Kaam khatam hone ke baad key delete karna achi practice hai
+        if: always()
+        run: rm -f gcp-key.json
