@@ -1,7 +1,9 @@
 """
-Project: Enterprise Workforce Analytics (Ultimate Bronze Layer - 5K Scale)
-Architecture: OBT | Incremental | Dimensional Modeling
-Features: 63 Columns, 13 Countries, 5000 Employees, Dynamic FX, Real-World Weights, NULL Simulation
+Script: ingest_workforce_bronze.py
+Purpose: Ingests workforce timesheet data into BigQuery Bronze layer.
+Architecture: Medallion (Bronze Layer - Ingestion)
+Owner: Data Analytics (Zaman Yaseen)
+Data Flow: Simulated HRIS + FX API -> BigQuery
 """
 
 import os, logging, random, uuid, requests, pandas as pd
@@ -31,12 +33,12 @@ def get_clients():
 def send_observation_alert(message):
     if SLACK_WEBHOOK:
         try:
-            payload = {"text": f"🚀 *ZY Enterprise Monitor (5K Scale)*: {message}"}
+            payload = {"text": f"[*WORKFORCE-BRONZE-INGESTION*] | {message}"}
             requests.post(SLACK_WEBHOOK, json=payload, timeout=5)
         except Exception: pass
     logging.info(message)
 
-# --- 2. ENTERPRISE MAPPINGS & NOISE GENERATORS ---
+# --- 2. TRANSFORMATION HELPERS ---
 REGION_MAP = {
     "USA": "NA", "CA": "NA",
     "UK": "EU", "DE": "EU", "NL": "EU", "SE": "EU",
@@ -91,12 +93,12 @@ def apply_hybrid(val, category):
     }
     return random.choice(maps.get(category, {}).get(val, [str(val).lower(), str(val).upper()]))
 
-# ---> NEW: THE MISSING VALUE SIMULATOR <---
+# --- 3. DATA QUALITY SIMULATION (NULL INJECTION) ---
 def maybe_null(val, prob=0.05):
     """5% chance to return NULL, mimicking real-world missing data"""
     return None if random.random() < prob else val
 
-# --- 3. DYNAMIC FX ENGINE (12+ CURRENCIES) ---
+# --- 4. EXCHANGE RATE (FX) INTEGRATION ---
 FX_MONTHLY_MAP = {}
 DEFAULT_FX = {"USD": 1.0, "PKR": 278.0, "INR": 83.0, "AED": 3.67, "SAR": 3.75, "QAR": 3.64, "GBP": 0.79, "EUR": 0.92, "CAD": 1.35, "AUD": 1.52, "SGD": 1.34, "SEK": 10.5, "SRC": "FALLBACK"}
 
@@ -118,7 +120,7 @@ def prefetch_fx_history(start_date, end_date):
             FX_MONTHLY_MAP[m_key] = DEFAULT_FX.copy()
         curr = (curr + timedelta(days=32)).replace(day=1)
 
-# --- 4. ENTERPRISE DIMENSIONS GENERATOR (5,000 SCALE) ---
+# --- 5. MOCK DIMENSION SEEDING (5000 RECORDS) ---
 BILLING_MATRIX = {"Data Engineer": {"Junior": 65, "Senior": 135, "Lead": 215}, "Data Analyst": {"Junior": 45, "Senior": 95, "Lead": 150}, "QA Engineer": {"Junior": 30, "Senior": 70, "Lead": 110}}
 REGION_MULT = {"USA": 1.5, "CA": 1.4, "UK": 1.3, "DE": 1.3, "NL": 1.3, "SE": 1.3, "UAE": 1.2, "SA": 1.2, "QA": 1.2, "SG": 1.2, "AU": 1.4, "PK": 0.5, "IN": 0.55}
 
@@ -168,7 +170,7 @@ def seed_enterprise_dimensions():
         }
     return clients, projects, employees
 
-# --- 5. GCP OBT DDL ---
+# --- 6. GCP OBT DDL ---
 FACT_TABLE_DDL = """
     CREATE TABLE IF NOT EXISTS `{table_id}` (
         timesheet_id STRING, emp_id STRING, manager_id STRING, project_id STRING, client_id STRING, 
@@ -204,17 +206,17 @@ def get_fact_start_date(bq_client, table_ref):
         bq_client.query(FACT_TABLE_DDL.format(table_id=table_ref)).result()
         return HISTORY_START
 
-# --- 6. CORE ETL PIPELINE ---
+# --- 7. CORE ETL PIPELINE ---
 def run_ultimate_pipeline():
-    if not OXR_APP_ID: raise ValueError("CRITICAL: OXR_APP_ID missing!")
+    if not OXR_APP_ID: raise ValueError("Missing required environment variable: OXR_APP_ID")
     bq_client = get_clients()
     table_ref = f"{PROJECT_ID}.{DATASET_ID}.{FACT_TABLE}"
     
-    send_observation_alert("Starting Enterprise OBT Incremental Load (5,000 Scale, Full Messy/NULL Realism)...")
+    send_observation_alert(f"INFO: Ingestion started. Layer: Bronze | Batch: {RUN_ID}")
     start_dt = get_fact_start_date(bq_client, table_ref)
     end_dt = datetime.now().date()
     if start_dt > end_dt:
-        send_observation_alert("✅ Pipeline Up-to-Date.")
+        send_observation_alert("INFO: Sync complete. No new data to ingest for the current period.")
         return
 
     prefetch_fx_history(start_dt, end_dt)
@@ -299,7 +301,7 @@ def run_ultimate_pipeline():
                     "timesheet_id": str(uuid.uuid4()) if is_corr else original_id,
                     "emp_id": eid, "manager_id": emp["Mgr_ID"], "project_id": p_id, "client_id": client_id, "work_date": curr_dt,
                     
-                    # ---> APPLIED maybe_null() TO NON-CRITICAL TEXT FIELDS FOR 5% MISSING DATA REALISM <---
+                    # Apply NULL simulation to non-critical text fields (~5%)
                     "employee_name": maybe_null(apply_messy(emp["Name"])), 
                     "designation": maybe_null(apply_messy(emp["Designation"])),
                     "department": apply_messy(emp["Dept"]), 
@@ -357,12 +359,12 @@ def run_ultimate_pipeline():
         bq_client.load_table_from_dataframe(df, table_ref, job_config=job_config).result()
         total_loaded += len(buffer)
 
-    send_observation_alert(f"✅ Success: Massive Raw Layer Loaded ({total_loaded:,} records, Includes NULL Simulation).")
+    send_observation_alert(f"SUCCESS: Ingestion complete. Rows: {total_loaded:,} | Batch: {RUN_ID}")
 
 if __name__ == "__main__":
     try:
         run_ultimate_pipeline()
     except Exception as e:
-        error_msg = f"❌ CRITICAL CRASH: {str(e)}"
+        error_msg = f"ERROR: Ingestion failed. Context: {str(e)}"
         send_observation_alert(error_msg)
         raise e
