@@ -1,9 +1,9 @@
-name: Enterprise Workforce Analytics Pipeline
+name: Workforce Bronze Ingestion  # Display name in the GitHub Actions dashboard
 
 on:
-  workflow_dispatch: # Manual button ke liye
+  workflow_dispatch: # Allows manual triggering of the pipeline
   schedule:
-    - cron: '0 0 * * *' # Rozana raat 12 baje automatic run
+    - cron: '0 0 * * *' # Automatic daily run at midnight (UTC)
 
 jobs:
   build-and-run:
@@ -23,20 +23,20 @@ jobs:
           pip install pandas requests faker google-cloud-storage google-cloud-bigquery db-dtypes tqdm
 
       - name: Authenticate to Google Cloud
-        # Ye step aapke secret JSON ko ek temporary file mein badal dega
+        # Converts the GCP_KEY_JSON secret into a temporary physical file
         run: echo '${{ secrets.GCP_KEY_JSON }}' > gcp-key.json
 
-      - name: Run Enterprise ETL Pipeline
+      - name: Run Bronze Ingestion Pipeline
         env:
-          # Yahan hum GitHub ki tijori se secrets nikaal kar Python ko de rahe hain
+          # Injecting GitHub Secrets into the environment for Python access
           OXR_APP_ID: ${{ secrets.OXR_APP_ID }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           GOOGLE_APPLICATION_CREDENTIALS: gcp-key.json
         run: |
-          # Tasalli kar lein ke path 'python_etl/data_pipeline.py' hi hai
-          python python_etl/data_pipeline.py
+          # Ensure the path and filename matches your repository structure
+          python python_etl/ingest_workforce_bronze.py
 
       - name: Cleanup Security Keys
-        # Kaam khatam hone ke baad key delete karna achi practice hai
+        # Deletes the key file after execution for security compliance
         if: always()
         run: rm -f gcp-key.json
