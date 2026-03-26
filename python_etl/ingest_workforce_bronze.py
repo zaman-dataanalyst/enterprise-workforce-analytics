@@ -18,7 +18,7 @@ SLACK_WEBHOOK = os.getenv("SLACK_WEBHOOK_URL")
 
 PROJECT_ID   = "enterprise-workforce-analytics"
 DATASET_ID   = "bronze_layer"
-FACT_TABLE   = "raw_timesheets_messy_v1"
+FACT_TABLE = "raw_hris_timesheets_v1"
 RUN_ID       = str(uuid.uuid4())[:8]
 HISTORY_START= datetime(2023, 1, 1).date()
 
