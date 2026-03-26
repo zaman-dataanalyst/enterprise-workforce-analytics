@@ -20,7 +20,7 @@ jobs:
 
       - name: Install Professional Dependencies
         run: |
-          pip install pandas requests faker google-cloud-storage google-cloud-bigquery db-dtypes tqdm
+          pip install pandas faker google-cloud-bigquery google-cloud-storage requests pandas-gbq>=0.26.1 pyarrow db-dtypes
 
       - name: Authenticate to Google Cloud
         # Converts the GCP_KEY_JSON secret into a temporary physical file
