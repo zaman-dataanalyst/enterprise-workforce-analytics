@@ -1,0 +1,24 @@
+name: 'workforce_analytics'
+version: '1.0.0'
+profile: 'workforce_analytics'
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+# CONFIGURATION SECTION
+models:
+  workforce_analytics:
+    # Default materialization for all models
+    +materialized: view
+    
+    # Layer specific configs (Hum aage ja kar yahan staging/marts add karenge)
+    staging:
+      +materialized: view

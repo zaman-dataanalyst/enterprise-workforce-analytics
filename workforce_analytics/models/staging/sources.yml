@@ -1,0 +1,7 @@
+version: 2
+
+sources:
+  - name: bronze_layer
+    database: enterprise-workforce-analytics
+    tables:
+      - name: raw_hris_timesheets_v1
