@@ -1,0 +1,29 @@
+version: 2
+
+models:
+  - name: stg_hris__timesheets
+    description: "Staging model for HRIS timesheets. Applies standardization, type casting, and anomaly flags."
+
+    columns:
+      - name: timesheet_id
+        description: "Unique identifier of timesheet"
+        tests:
+          - not_null
+          - unique
+
+      - name: employee_id
+        description: "Employee identifier"
+        tests:
+          - not_null
+
+      - name: work_date
+        description: "Date of work"
+        tests:
+          - not_null
+
+      - name: entry_type
+        description: "Type of entry (original or correction)"
+        tests:
+          - accepted_values:
+              arguments:    
+                values: ['original', 'correction']
