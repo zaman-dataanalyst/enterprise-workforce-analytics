@@ -1,11 +1,19 @@
+# =============================================================================
+# PROJECT:       Workforce Analytics (Enterprise HRIS Portfolio)
+# MAINTAINER:    Hafiz Zaman Yaseen
+# FRAMEWORK:     Medallion Architecture | Kimball Star Schema Modeling
+# =============================================================================
+
 name: 'workforce_analytics'
 version: '1.0.0'
+config-version: 2
 profile: 'workforce_analytics'
 
+# Directory Paths & Structure
 model-paths: ["models"]
-analysis-paths: ["analyses"]
-test-paths: ["tests"]
 seed-paths: ["seeds"]
+test-paths: ["tests"]
+analysis-paths: ["analyses"]
 macro-paths: ["macros"]
 snapshot-paths: ["snapshots"]
 
@@ -13,12 +21,26 @@ clean-targets:
   - "target"
   - "dbt_packages"
 
-# CONFIGURATION SECTION
+# =============================================================================
+# MODEL HIERARCHY & DATA GOVERNANCE
+# =============================================================================
 models:
   workforce_analytics:
-    # Default materialization for all models
+    # PROJECT DEFAULT: Defaulting to views to minimize storage costs for transient nodes.
     +materialized: view
-    
-    # Layer specific configs (Hum aage ja kar yahan staging/marts add karenge)
+
+    # SILVER LAYER: Centralized cleaning and standardization plant.
+    # RATIONALE: Persisted as 'table' to optimize compute for 3.7M rows and 
+    # handle 22+ complex string transformations (UPPER/TRIM) once.
     staging:
-      +materialized: view
+      +materialized: table
+      +schema: silver_layer  # Exactly matches BigQuery dataset
+      +tags: ["hris", "enterprise_staging"]
+
+    # GOLD LAYER: Production-ready Star Schema for BI consumption.
+    # RATIONALE: Tables ensure low-latency joins and sub-second response times 
+    # for Power BI reporting (DirectQuery/Import).
+    marts:
+      +materialized: table
+      +schema: gold_layer    # Exactly matches BigQuery dataset
+      +tags: ["hris_reporting", "analytics_marts"]

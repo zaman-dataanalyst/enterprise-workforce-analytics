@@ -1,0 +1,58 @@
+name: Enterprise dbt Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  dbt-build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python Environment
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dbt (BigQuery)
+        run: pip install dbt-bigquery==1.11.7
+
+      - name: Authenticate to Google Cloud Warehouse
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.GCP_CREDENTIALS }}'
+
+      # FAANG FIX: Using 'echo' avoids GitHub Actions YAML parsing crashes 
+      # while ensuring exact, space-free configuration for dbt.
+      - name: Setup dbt profiles.yml
+        run: |
+          mkdir -p ~/.dbt
+          echo "workforce_analytics:" > ~/.dbt/profiles.yml
+          echo "  target: prod" >> ~/.dbt/profiles.yml
+          echo "  outputs:" >> ~/.dbt/profiles.yml
+          echo "    prod:" >> ~/.dbt/profiles.yml
+          echo "      type: bigquery" >> ~/.dbt/profiles.yml
+          echo "      method: oauth" >> ~/.dbt/profiles.yml
+          echo "      project: ${{ secrets.GCP_PROJECT_ID }}" >> ~/.dbt/profiles.yml
+          echo "      dataset: gold_layer" >> ~/.dbt/profiles.yml
+          echo "      threads: 4" >> ~/.dbt/profiles.yml
+          echo "      location: US" >> ~/.dbt/profiles.yml
+
+      - name: Install dbt Dependencies
+        run: dbt deps
+        working-directory: ./workforce_analytics
+
+      - name: Execute dbt Models (Silver to Gold Star Schema)
+        run: dbt run --target prod
+        working-directory: ./workforce_analytics
+
+      - name: Test Star Schema Integrity
+        run: dbt test --target prod
+        working-directory: ./workforce_analytics

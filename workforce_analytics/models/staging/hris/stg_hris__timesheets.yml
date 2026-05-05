@@ -2,28 +2,141 @@ version: 2
 
 models:
   - name: stg_hris__timesheets
-    description: "Staging model for HRIS timesheets. Applies standardization, type casting, and anomaly flags."
-
+    description: >
+      Silver layer staging model for HRIS timesheets. 
+      Cleanses alphanumeric corruption (1 -> i), standardizes complex categorical dimensions 
+      to strict corporate canonical forms, preserves valid True NULLs for parent records, 
+      and computes BI helper flags for downstream dimensional modeling.
+    
     columns:
       - name: timesheet_id
-        description: "Unique identifier of timesheet"
+        description: "Primary key for the timesheet record. Confirmed strictly unique."
         tests:
-          - not_null
           - unique
+          - not_null
 
       - name: employee_id
-        description: "Employee identifier"
+        description: "Foreign key to the employee dimension."
         tests:
           - not_null
 
       - name: work_date
-        description: "Date of work"
+        description: "Date of work performance. Constrained to valid historical and current periods."
         tests:
           - not_null
 
-      - name: entry_type
-        description: "Type of entry (original or correction)"
+      - name: employment_type
+        description: "Standardized employment type aliases to canonical values."
         tests:
           - accepted_values:
-              arguments:    
-                values: ['original', 'correction']
+              arguments:
+                values: ['FULL-TIME', 'CONTRACTOR', 'UNKNOWN']
+
+      - name: employment_status
+        description: "Standardized active/inactive status."
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['ACTIVE', 'INACTIVE', 'UNKNOWN']
+
+      - name: project_type
+        description: "Standardized billing methodology."
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['T&M', 'FIXED PRICE', 'INTERNAL', 'UNKNOWN']
+              
+      - name: project_phase
+        description: "Standardized project phase (INITCAP format). Ambiguous 'N/A' values are explicitly mapped to 'UNKNOWN'."
+        tests:
+          - not_null
+
+      - name: project_priority
+        description: "Consolidated text and numeric (P0-P3) priority scales into a unified text scale."
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'UNKNOWN']
+
+      - name: client_segment
+        description: "Standardized B2B, B2C, B2G, and Corporate mappings."
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['B2B', 'B2C', 'B2G', 'CORPORATE', 'INTERNAL', 'UNKNOWN']
+
+      - name: client_industry
+        description: "Standardized client industry categories."
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['INTERNAL', 'FINTECH', 'EDTECH', 'RETAIL', 'HEALTHCARE', 'UNKNOWN']
+
+      - name: location_country
+        description: "Standardized ISO-3166 Full Names for employee location to support BI Geocoding."
+        tests:
+          - accepted_values:
+              arguments:
+                values: [
+                  'Pakistan', 'India', 'United Kingdom', 'United Arab Emirates', 'United States', 
+                  'Saudi Arabia', 'Canada', 'Germany', 'Singapore', 'Australia', 'Sweden', 
+                  'Netherlands', 'Qatar', 'UNKNOWN'
+                ]
+
+      - name: client_country
+        description: "Standardized ISO-3166 Full Names for client location to support BI Geocoding."
+        tests:
+          - accepted_values:
+              arguments:
+                values: [
+                  'Pakistan', 'India', 'United Kingdom', 'United Arab Emirates', 'United States', 
+                  'Saudi Arabia', 'Canada', 'Germany', 'Singapore', 'Australia', 'Sweden', 
+                  'Netherlands', 'Qatar', 'UNKNOWN'
+                ]
+
+      - name: location_region
+        description: "Canonical corporate regional abbreviations (AMER, EMEA, APAC, LATAM)."
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['AMER', 'EMEA', 'APAC', 'LATAM', 'MEA', 'UNKNOWN']
+
+      - name: client_region
+        description: "Canonical corporate regional abbreviations for clients."
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['AMER', 'EMEA', 'APAC', 'LATAM', 'MEA', 'UNKNOWN']
+
+      - name: salary_currency
+        description: "Standardized ISO-4217 currency codes validated against historical fx_rate bands."
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['PKR', 'INR', 'GBP', 'AED', 'EUR', 'CAD', 'SGD', 'SAR', 'USD', 'UNKNOWN']
+
+      - name: hours_worked
+        description: >
+          Total hours logged. Negative values are kept explicitly for financial netting 
+          in the Gold layer (tied strictly to correction records).
+        tests:
+          - not_null
+
+      - name: utilization_pct
+        description: "Employee utilization rate, stored natively on a 0.0 to 1.0 decimal scale."
+        tests:
+          - not_null
+
+      - name: original_timesheet_id
+        description: >
+          Self-referencing foreign key for correction records. Intentionally allowed to be NULL. 
+          A NULL value indicates this is the original, factual transaction.
+
+      - name: is_skill_designation_mismatch
+        description: >
+          Derived Boolean Flag. True if an employee's primary skill does not match their HR designation. 
+          Indicates potential systemic column swaps in the source HRIS.
+
+      - name: is_negative_hour_correction
+        description: >
+          Derived Boolean Flag. True if the record is a valid financial correction (negative hours).

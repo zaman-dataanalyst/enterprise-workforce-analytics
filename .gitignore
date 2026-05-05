@@ -1,0 +1,24 @@
+# =======================================================
+# ENTERPRISE WORKFORCE ANALYTICS - MASTER .GITIGNORE
+# =======================================================
+
+# 1. Data Privacy & Audit Samples (Strictly Local)
+data_quality_audits/local_samples/
+raw_data/
+local_data_samples/
+
+# 2. Python Environments & Secrets (Ingestion & Audit)
+venv/
+env/
+.venv/
+.env
+__pycache__/
+*.pyc
+
+# 3. Pipeline Logs (Root Level)
+logs/
+audit_results.txt
+
+# 4. OS/System Generated Artifacts
+.DS_Store
+Thumbs.db

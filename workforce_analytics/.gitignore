@@ -1,4 +1,13 @@
-
+# dbt core artifacts (Must NOT be pushed to GitHub)
 target/
 dbt_packages/
 logs/
+
+# Data Privacy & Security (Exclude Excel, but ALLOW CSV for dbt seeds)
+data/
+*.xlsx
+*.json
+
+# OS specific files
+.DS_Store
+Thumbs.db

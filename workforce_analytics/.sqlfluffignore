@@ -1,0 +1,4 @@
+target/
+dbt_packages/
+macros/
+models/staging/hris/stg_hris__timesheets.sql

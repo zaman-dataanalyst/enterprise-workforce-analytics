@@ -1,0 +1,66 @@
+2026-05-04 02:06:43  INFO      Loaded 10,000 records | 66 columns
+2026-05-04 02:06:43  INFO      [PASS ✓] PK_UNIQUE                                timesheet_id: 0 duplicates.
+2026-05-04 02:06:43  INFO      [PASS ✓] NO_TRUE_NULL                             employee_name: 0 true NULLs after COALESCE.
+2026-05-04 02:06:43  INFO      [PASS ✓] NO_TRUE_NULL                             client_name: 0 true NULLs after COALESCE.
+2026-05-04 02:06:43  INFO      [PASS ✓] NO_TRUE_NULL                             project_name: 0 true NULLs after COALESCE.
+2026-05-04 02:06:43  INFO      [PASS ✓] NO_TRUE_NULL                             client_industry: 0 true NULLs after COALESCE.
+2026-05-04 02:06:43  INFO      [PASS ✓] NO_TRUE_NULL                             designation: 0 true NULLs after COALESCE.
+2026-05-04 02:06:43  INFO      [PASS ✓] NO_TRUE_NULL                             location_city: 0 true NULLs after COALESCE.
+2026-05-04 02:06:43  INFO      [PASS ✓] NO_TRUE_NULL                             task_category: 0 true NULLs after COALESCE.
+2026-05-04 02:06:43  INFO      [PASS ✓] NO_TRUE_NULL                             employee_name: 0 true NULLs after COALESCE.
+2026-05-04 02:06:43  INFO      [PASS ✓] NULL_IMPUTATION                          employee_name: Verified presence of valid fallback 'ANONYMOUS'.
+2026-05-04 02:06:43  INFO      [PASS ✓] NO_TRUE_NULL                             client_name: 0 true NULLs after COALESCE.
+2026-05-04 02:06:43  INFO      [PASS ✓] NULL_IMPUTATION                          client_name: Verified presence of valid fallback 'INTERNAL'.
+2026-05-04 02:06:43  INFO      [PASS ✓] NO_TRUE_NULL                             project_name: 0 true NULLs after COALESCE.
+2026-05-04 02:06:43  INFO      [PASS ✓] NULL_IMPUTATION                          project_name: Verified presence of valid fallback 'BENCH'.
+2026-05-04 02:06:43  INFO      [PASS ✓] NO_TRUE_NULL                             client_industry: 0 true NULLs after COALESCE.
+2026-05-04 02:06:43  INFO      [PASS ✓] NULL_IMPUTATION                          client_industry: Verified presence of valid fallback 'UNKNOWN'.
+2026-05-04 02:06:43  INFO      [PASS ✓] NO_TRUE_NULL                             designation: 0 true NULLs after COALESCE.
+2026-05-04 02:06:43  INFO      [PASS ✓] NULL_IMPUTATION                          designation: Verified presence of valid fallback 'UNKNOWN'.
+2026-05-04 02:06:43  INFO      [PASS ✓] NO_TRUE_NULL                             location_city: 0 true NULLs after COALESCE.
+2026-05-04 02:06:43  INFO      [PASS ✓] NULL_IMPUTATION                          location_city: Verified presence of valid fallback 'UNKNOWN'.
+2026-05-04 02:06:43  INFO      [PASS ✓] NO_TRUE_NULL                             task_category: 0 true NULLs after COALESCE.
+2026-05-04 02:06:43  INFO      [PASS ✓] NULL_IMPUTATION                          task_category: Imputation clean for this sample.
+2026-05-04 02:06:43  INFO      [PASS ✓] ORIG_ID_NULL                             original_timesheet_id: NULLs preserved for original entries.
+2026-05-04 02:06:44  INFO      [PASS ✓] WHITESPACE                               All text columns: 0 whitespace contamination.
+2026-05-04 02:06:44  INFO      [PASS ✓] NO_DIGIT_CORRUPTION                      employee_name: 0 alphanumeric corruption rows.
+2026-05-04 02:06:44  INFO      [PASS ✓] NO_DIGIT_CORRUPTION                      designation: 0 alphanumeric corruption rows.
+2026-05-04 02:06:44  INFO      [PASS ✓] NO_DIGIT_CORRUPTION                      department: 0 alphanumeric corruption rows.
+2026-05-04 02:06:44  INFO      [PASS ✓] NO_DIGIT_CORRUPTION                      skill_primary: 0 alphanumeric corruption rows.
+2026-05-04 02:06:44  INFO      [PASS ✓] NO_DIGIT_CORRUPTION                      task_category: 0 alphanumeric corruption rows.
+2026-05-04 02:06:44  INFO      [PASS ✓] NO_DIGIT_CORRUPTION                      client_name: 0 alphanumeric corruption rows.
+2026-05-04 02:06:44  INFO      [PASS ✓] NO_DIGIT_CORRUPTION                      client_industry: 0 alphanumeric corruption rows.
+2026-05-04 02:06:44  INFO      [PASS ✓] BANNED_TYPOS                             location_city: No banned typo values found.
+2026-05-04 02:06:44  INFO      [PASS ✓] BANNED_TYPOS                             designation: No banned typo values found.
+2026-05-04 02:06:44  INFO      [PASS ✓] BANNED_TYPOS                             department: No banned typo values found.
+2026-05-04 02:06:44  INFO      [PASS ✓] BANNED_TYPOS                             task_category: No banned typo values found.
+2026-05-04 02:06:44  INFO      [PASS ✓] BANNED_TYPOS                             client_industry: No banned typo values found.
+2026-05-04 02:06:44  INFO      [PASS ✓] BANNED_TYPOS                             salary_currency: No banned typo values found.
+2026-05-04 02:06:44  INFO      [PASS ✓] PROJ_NUMS_PRESERVED                      project_name: 384 rows with valid numeric terms confirmed.
+2026-05-04 02:06:44  INFO      [PASS ✓] ACCEPTED_VALS_EMPLOYMENT_TYPE            employment_type: All values canonical.
+2026-05-04 02:06:44  INFO      [PASS ✓] ACCEPTED_VALS_EMPLOYMENT_STATUS          employment_status: All values canonical.
+2026-05-04 02:06:44  INFO      [PASS ✓] ACCEPTED_VALS_PROJECT_STATUS             project_status: All values canonical.
+2026-05-04 02:06:44  INFO      [PASS ✓] ACCEPTED_VALS_PROJECT_TYPE               project_type: All values canonical.
+2026-05-04 02:06:44  INFO      [PASS ✓] ACCEPTED_VALS_PROJECT_PRIORITY           project_priority: All values canonical.
+2026-05-04 02:06:44  INFO      [PASS ✓] ACCEPTED_VALS_CLIENT_SEGMENT             client_segment: All values canonical.
+2026-05-04 02:06:44  INFO      [PASS ✓] ACCEPTED_VALS_DEPARTMENT                 department: All values canonical.
+2026-05-04 02:06:44  INFO      [PASS ✓] ACCEPTED_VALS_TASK_CATEGORY              task_category: All values canonical.
+2026-05-04 02:06:44  INFO      [PASS ✓] ACCEPTED_VALS_SALARY_CURRENCY            salary_currency: All values canonical.
+2026-05-04 02:06:44  INFO      [PASS ✓] ACCEPTED_VALS_LOCATION_COUNTRY           location_country: All values canonical.
+2026-05-04 02:06:44  INFO      [PASS ✓] ACCEPTED_VALS_CLIENT_COUNTRY             client_country: All values canonical.
+2026-05-04 02:06:44  INFO      [PASS ✓] NEG_HOURS_LOGIC                          114 negative-hour rows: all have is_correction=True.
+2026-05-04 02:06:44  INFO      [PASS ✓] NEG_HOURS_ENTRY                          114 negative-hour rows: all have entry_type='CORRECTION'.
+2026-05-04 02:06:44  INFO      [PASS ✓] HOURS_MATH                               billable + non_billable = hours_worked: 0 violations.
+2026-05-04 02:06:44  INFO      [PASS ✓] UTIL_SCALE                               utilization_pct: Confirmed 0-1 scale. No values > 1 or < 0.
+2026-05-04 02:06:44  INFO      [PASS ✓] ALLOC_SCALE                              allocation_pct: Confirmed 0-1 scale.
+2026-05-04 02:06:44  INFO      [PASS ✓] PROFIT_MATH                              profit_usd = revenue_usd - cost_usd: 0 violations.
+2026-05-04 02:06:44  INFO      [PASS ✓] REVENUE_MATH                             revenue_usd = billable_hours × hourly_rate_usd: 0 violations.
+2026-05-04 02:06:44  INFO      [PASS ✓] BILLABLE_CONSISTENCY                     is_billable ↔ billable_hours: 100% consistent.
+2026-05-04 02:06:44  INFO      [PASS ✓] ENTRY_IS_CORR                            entry_type ↔ is_correction: 100% aligned. 0 breaches.
+2026-05-04 02:06:44  INFO      [PASS ✓] DQ_FLAG_VALUES                           data_quality_flag: Only 'VALID'/'CORRECTED' present.
+2026-05-04 02:06:44  INFO      [PASS ✓] CLIENT_NAME_CONSISTENCY                  client_id ↔ client_name: Variants within normal limits.
+2026-05-04 02:06:44  INFO      [PASS ✓] PROJ_TYPE_CONSISTENCY                    project_id ↔ project_type: Variants within normal limits.
+2026-05-04 02:06:44  INFO      [PASS ✓] DATE_BOUNDARIES                          work_date: 0 future / 0 pre-2020 dates.
+2026-05-04 02:06:44  INFO      AUDIT SUMMARY | Total Checks: 62 | PASSED: 62 | FAILED: 0 | WARNINGS: 0
+2026-05-04 02:06:44  INFO      VERDICT: ✅ STAGING LAYER IS PRODUCTION-READY.
+2026-05-04 02:06:44  INFO      Results saved to: audit_results.log

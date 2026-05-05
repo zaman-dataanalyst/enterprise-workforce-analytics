@@ -1,0 +1,14 @@
+version: 2
+
+macros:
+  - name: generate_schema_name
+    description: >
+      Custom macro to override dbt's default schema naming convention. 
+      It prevents dbt from prefixing custom schemas with the target schema (e.g., preventing 'silver_layer_silver').
+      This ensures clean alignment with the Medallion Architecture datasets (silver_layer, gold_layer) in BigQuery.
+    
+    arguments:
+      - name: custom_schema_name
+        description: "The schema name defined in the dbt_project.yml or model config (e.g., 'silver_layer')."
+      - name: node
+        description: "The dbt node (model, seed, etc.) currently being processed by the compiler."

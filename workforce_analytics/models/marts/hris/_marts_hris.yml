@@ -1,0 +1,540 @@
+version: 2
+
+models:
+  # ─────────────────────────────────────────────────────────────
+  # DIMENSIONS — Primary Keys: unique + not_null required
+  # ─────────────────────────────────────────────────────────────
+
+  - name: dim_employees
+    description: >
+      Gold dimension for employees. Grain: one row per employee_id, 
+      representing the latest known record ordered by work_date DESC 
+      and load_timestamp DESC. Used for organizational hierarchy, 
+      payroll categorization, and headcount reporting in Power BI.
+    columns:
+      - name: employee_key
+        description: >
+          Surrogate primary key mapped directly from employee_id. 
+          Used as the join key in all star-schema relationships 
+          (Kimball standard).
+        tests:
+          - unique
+          - not_null
+
+      - name: employee_name
+        description: "Full display name of the employee as sourced from the HRIS system."
+
+      - name: manager_id
+        description: >
+          Employee ID of the direct line manager. Enables org-chart 
+          hierarchy traversal and management reporting in Power BI.
+
+      - name: cost_center
+        description: >
+          Internal financial unit code to which the employee's salary 
+          cost is allocated. Used for P&L attribution.
+
+      - name: department
+        description: "Organizational department the employee belongs to (e.g., Engineering, Sales, Operations)."
+
+      - name: designation
+        description: >
+          Standardized professional job title of the employee 
+          (e.g., Senior Data Engineer). Used for skill-mismatch 
+          analysis against dim_skills_bridge.
+
+      - name: seniority_level
+        description: >
+          Hierarchical seniority band (e.g., Junior, Mid, Senior, Lead). 
+          Separate from designation to enable cross-functional cohort 
+          analysis.
+
+      - name: skill_primary
+        description: >
+          The employee's self-declared or HR-assigned primary technical 
+          or functional skill. Cross-referenced in dim_skills_bridge 
+          for alignment scoring.
+
+      - name: employment_type
+        description: >
+          Contract classification of the employee 
+          (e.g., Full-Time, Part-Time, Contractor). 
+          Drives capacity planning in Power BI reports.
+
+      - name: location_country
+        description: "Country where the employee is physically based. Used for geographic cost analysis."
+
+      - name: location_city
+        description: "City where the employee is physically based. Granular geographic dimension."
+
+      - name: salary_local
+        description: >
+          Gross monthly salary in the employee's local currency. 
+          Converted to USD in fct_timesheets using monthly_avg_cost_fx_rate 
+          for stable cost calculations.
+
+      - name: payroll_currency
+        description: >
+          ISO 4217 currency code for the employee's salary 
+          (e.g., PKR, USD, GBP). Used as the FX conversion source 
+          in the fact table.
+
+      - name: is_active_flag
+        description: >
+          Binary integer flag (1 = Active, 0 = Inactive/Terminated). 
+          Derived from employment_status. Enables headcount filters 
+          in Power BI slicers without raw status string matching.
+
+      - name: experience_bracket
+        description: >
+          Pre-calculated experience cohort label based on experience_years: 
+          'Early Career (0-2Y)', 'Mid-Career (2-5Y)', 'Senior (5Y+)'. 
+          Used for workforce analytics segmentation in Power BI.
+
+  # ─────────────────────────────────────────────────────────────
+
+  - name: dim_projects
+    description: >
+      Gold dimension for projects. Grain: one row per project_id, 
+      representing the latest known project state ordered by 
+      work_date DESC. Central entity linking financial effort 
+      to client delivery.
+    columns:
+      - name: project_key
+        description: >
+          Surrogate primary key mapped from project_id. 
+          Acts as the foreign key reference in fct_timesheets 
+          (Kimball star-schema standard).
+        tests:
+          - unique
+          - not_null
+
+      - name: project_name
+        description: "Human-readable display name of the project as registered in the HRIS system."
+
+      - name: project_type
+        description: >
+          Billing model classification of the project 
+          (e.g., Fixed Price, Time & Materials, Retainer). 
+          Critical dimension for revenue forecasting in Power BI.
+
+      - name: project_status
+        description: >
+          Current lifecycle phase or health state of the project 
+          (e.g., Active, On Hold, Completed). Used for pipeline 
+          and delivery status reporting.
+
+      - name: project_phase
+        description: >
+          Granular delivery stage within the project lifecycle 
+          (e.g., Discovery, Development, UAT, Closure). 
+          More specific than project_status.
+
+      - name: project_priority
+        description: >
+          Business priority rank assigned to the project 
+          (e.g., P1-Critical, P2-High, P3-Medium). 
+          Used for resource allocation analysis.
+
+      - name: project_manager_id
+        description: >
+          Employee ID of the assigned project manager. 
+          Can be cross-referenced with dim_employees.employee_key 
+          for manager-level performance reporting.
+
+  # ─────────────────────────────────────────────────────────────
+
+  - name: dim_clients
+    description: >
+      Gold dimension for clients. Grain: one row per client_id, 
+      representing the most recent client attributes ordered by 
+      work_date DESC. Enables segmentation by industry, size, 
+      and geography for revenue analysis.
+    columns:
+      - name: client_key
+        description: >
+          Surrogate primary key mapped from client_id. 
+          Acts as the foreign key reference in fct_timesheets 
+          (Kimball star-schema standard).
+        tests:
+          - unique
+          - not_null
+
+      - name: client_name
+        description: "Official registered name of the client organization."
+
+      - name: client_industry
+        description: >
+          Primary industry vertical of the client 
+          (e.g., FinTech, Healthcare, Retail). 
+          Used for industry-level revenue breakdown in Power BI.
+
+      - name: client_segment
+        description: >
+          Business size classification of the client 
+          (e.g., Enterprise, SMB, Startup). 
+          Core dimension for account management dashboards.
+
+      - name: client_size
+        description: >
+          Approximate employee headcount or revenue band of the client. 
+          Enables tiered account profitability analysis.
+
+      - name: client_country
+        description: "Country where the client is headquartered. Used for geographic revenue mapping."
+
+      - name: client_region
+        description: >
+          Broader geographic sales region of the client 
+          (e.g., EMEA, APAC, North America). 
+          Used for regional performance reporting.
+
+  # ─────────────────────────────────────────────────────────────
+
+  - name: dim_date
+    description: >
+      Date spine dimension generated from 2023-01-01 to 2026-12-31. 
+      Grain: one row per calendar day. Primary purpose is enabling 
+      robust DAX Time Intelligence calculations (YTD, MoM, QoQ) 
+      in Power BI. Marked as a Date Table in the semantic model.
+    columns:
+      - name: date_key
+        description: >
+          Surrogate primary key generated via FARM_FINGERPRINT on the 
+          date string. Used as the foreign key in fct_timesheets 
+          for fast integer-based joining (Kimball standard).
+        tests:
+          - unique
+          - not_null
+
+      - name: work_date
+        description: >
+          The actual calendar date (DATE type). Used as the 
+          primary date axis in Power BI line charts and 
+          time-intelligence visuals.
+
+      - name: year
+        description: "Calendar year extracted from work_date (e.g., 2024). Used for year-level slicers."
+
+      - name: quarter
+        description: "Fiscal/calendar quarter number (1-4). Used for QoQ comparison in DAX."
+
+      - name: month_num
+        description: "Calendar month number (1-12). Used for numeric month filtering and sorting."
+
+      - name: month_name
+        description: >
+          Full month name string (e.g., 'January'). 
+          Must be sorted using month_year_sort in Power BI to 
+          avoid alphabetical ordering.
+
+      - name: month_year_sort
+        description: >
+          Integer in YYYYMM format (e.g., 202401). 
+          Used exclusively as the sort column for month_name 
+          in Power BI visuals to enforce chronological ordering. 
+          PL-300 best practice: never display this column directly.
+
+      - name: is_weekend
+        description: >
+          Boolean flag (TRUE for Saturday/Sunday, FALSE for weekdays). 
+          Critical for capacity planning — weekend hours should be 
+          excluded from utilization rate denominators.
+
+  # ─────────────────────────────────────────────────────────────
+
+  - name: dim_locations
+    description: >
+      Gold dimension for geographic locations. Grain: one row per 
+      unique country + city combination. Enables geographic revenue, 
+      cost, and market-tier analysis in Power BI map visuals.
+    columns:
+      - name: location_key
+        description: >
+          Surrogate primary key generated via FARM_FINGERPRINT on 
+          CONCAT(location_country, location_city). 
+          Matches the identical FARM_FINGERPRINT logic in fct_timesheets 
+          to guarantee referential integrity.
+        tests:
+          - unique
+          - not_null
+
+      - name: location_country
+        description: "Full country name where the work was performed (e.g., 'Pakistan', 'United States')."
+
+      - name: location_city
+        description: "City where the work was performed. Defaults to 'UNKNOWN' if not provided in source."
+
+      - name: market_segment
+        description: >
+          Tiered market classification based on country economic region: 
+          TIER 1 (US, UK, Germany, etc.), TIER 2 (UAE, Saudi Arabia, Qatar), 
+          TIER 3 (Pakistan, India, etc.). Used for geographic 
+          profitability benchmarking.
+
+  # ─────────────────────────────────────────────────────────────
+
+  - name: dim_activity_metadata
+    description: >
+      Junk dimension consolidating all low-cardinality boolean and 
+      categorical flags from timesheet entries into a single lookup table. 
+      Grain: one row per unique combination of activity flags. 
+      Keeps fct_timesheets narrow and performant by replacing 
+      8 flag columns with a single activity_key.
+    columns:
+      - name: activity_key
+        description: >
+          Surrogate primary key generated via FARM_FINGERPRINT on 
+          the concatenation of all 8 activity flags. 
+          Must use identical FARM_FINGERPRINT logic as fct_timesheets 
+          to guarantee referential integrity.
+        tests:
+          - unique
+          - not_null
+
+      - name: task_category
+        description: "High-level classification of the work activity (e.g., Development, QA, Management)."
+
+      - name: revenue_type
+        description: "Revenue recognition category of the activity (e.g., Billable, Internal, Training)."
+
+      - name: entry_type
+        description: "Source system classification of the timesheet entry (e.g., Manual, Automated, Corrected)."
+
+      - name: data_quality_flag
+        description: >
+          Data governance label applied during staging transformation 
+          to identify anomalous or suspicious records 
+          (e.g., CLEAN, ANOMALY, CORRECTION).
+
+      - name: is_billable
+        description: >
+          Boolean flag indicating whether the logged activity hours 
+          can be invoiced to the client. 
+          Core metric for billable utilization rate calculation.
+
+      - name: is_anomaly
+        description: >
+          Boolean flag identifying statistically abnormal timesheet 
+          entries detected during data quality checks in the 
+          Silver/Staging layer.
+
+      - name: is_correction
+        description: >
+          Boolean flag marking entries submitted to correct or 
+          reverse a previously logged record. 
+          Used to ensure accurate hours aggregation.
+
+      - name: is_holiday
+        description: >
+          Boolean flag identifying entries logged on public holidays. 
+          Used for capacity planning and overtime analysis.
+
+  # ─────────────────────────────────────────────────────────────
+
+  - name: dim_skills_bridge
+    description: >
+      Bridge table handling the many-to-many relationship between 
+      employees and their skills. Grain: one row per employee_id + 
+      skill_primary combination (latest record). 
+      Used in Power BI for skill-gap and workforce capability analysis.
+    columns:
+      - name: bridge_key
+        description: >
+          Surrogate primary key generated via FARM_FINGERPRINT on 
+          CONCAT(employee_id, skill_primary). 
+          Uniquely identifies each employee-skill pairing 
+          (Kimball bridge table standard).
+        tests:
+          - unique
+          - not_null
+
+      - name: employee_key
+        description: >
+          Foreign key referencing dim_employees.employee_key. 
+          Links skill records back to the employee dimension 
+          for headcount and skill distribution analysis.
+
+      - name: skill_primary
+        description: "The technical or functional skill assigned to the employee (e.g., Python, Power BI, Project Management)."
+
+      - name: skill_alignment_status
+        description: >
+          Analytical classification comparing skill_primary to 
+          the employee's designation: 'Aligned' (match) or 
+          'Skill Mismatch' (no match). 
+          Key KPI for workforce planning dashboards.
+
+  # ─────────────────────────────────────────────────────────────
+  # FACT TABLE — Grain: one row per timesheet_id
+  # Foreign Keys: not_null + relationships tests required
+  # ─────────────────────────────────────────────────────────────
+
+  - name: fct_timesheets
+    description: >
+      Core fact table containing highly granular daily timesheet entries. 
+      Grain: one row per timesheet_id (one employee, one task, one day). 
+      Contains all financial metrics (revenue, cost, profit), productivity 
+      KPIs, and FX-stabilized figures using monthly average rates to 
+      prevent daily FX volatility distortion. Built on Medallion Architecture 
+      (Bronze > Silver > Gold). Central table for the Power BI 
+      HRIS Analytics Dashboard.
+    columns:
+      - name: timesheet_id
+        description: >
+          Degenerate dimension — the original system-generated identifier 
+          for the timesheet entry. Retained from source for auditability 
+          and reconciliation. Acts as the natural grain key.
+        tests:
+          - unique
+          - not_null
+
+      # ── Foreign Keys ──────────────────────────────────────────
+
+      - name: employee_key
+        description: >
+          Foreign key joining to dim_employees.employee_key. 
+          Links each timesheet entry to the employee who logged the hours.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_employees')
+                field: employee_key
+
+      - name: project_key
+        description: >
+          Foreign key joining to dim_projects.project_key. 
+          Links each timesheet entry to the project the work was performed on.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_projects')
+                field: project_key
+
+      - name: client_key
+        description: >
+          Foreign key joining to dim_clients.client_key. 
+          Links each timesheet entry to the client who owns the project.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_clients')
+                field: client_key
+
+      - name: date_key
+        description: >
+          Foreign key joining to dim_date.date_key. 
+          Generated via identical FARM_FINGERPRINT(CAST(work_date AS STRING)) 
+          logic to guarantee referential integrity.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_key
+
+      - name: location_key
+        description: >
+          Foreign key joining to dim_locations.location_key. 
+          Generated via identical FARM_FINGERPRINT(CONCAT(country, city)) 
+          logic to guarantee referential integrity.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_locations')
+                field: location_key
+
+      - name: activity_key
+        description: >
+          Foreign key joining to dim_activity_metadata.activity_key. 
+          Generated via identical FARM_FINGERPRINT on 8 flag columns — 
+          must stay in exact sync with dim_activity_metadata SQL.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_activity_metadata')
+                field: activity_key
+
+      # ── Time & Capacity Metrics ───────────────────────────────
+
+      - name: work_date
+        description: "Actual calendar date of the timesheet entry. Used as a secondary date reference for audit purposes."
+
+      - name: hours_worked
+        description: >
+          Total physical clock hours logged by the employee for 
+          the given task on the given day. 
+          Core denominator for utilization and productivity KPIs.
+
+      - name: billable_hours
+        description: >
+          Subset of hours_worked that are designated as client-billable. 
+          Used to calculate the billable utilization rate 
+          (billable_hours / capacity_hours).
+
+      - name: capacity_hours
+        description: >
+          Standard working hours available for the employee on 
+          that day (typically 8.0). Used as the denominator 
+          in utilization_pct calculations.
+
+      - name: utilization_pct
+        description: >
+          Pre-calculated utilization rate as a decimal 
+          (billable_hours / capacity_hours). 
+          Used directly in Power BI KPI cards and gauge visuals.
+
+      # ── Financial Metrics ─────────────────────────────────────
+
+      - name: revenue_usd
+        description: >
+          Top-line revenue generated for this timesheet entry, 
+          calculated as billable_hours multiplied by the client's 
+          hourly rate, expressed in USD.
+
+      - name: daily_fx_rate_audit
+        description: >
+          Spot FX rate on the specific work_date used for 
+          audit trail purposes only. 
+          Do NOT use for cost calculations — use stable_cost_usd instead.
+
+      - name: monthly_avg_cost_fx_rate
+        description: >
+          Monthly average FX rate calculated as AVG(fx_rate) 
+          partitioned by currency, year, and month. 
+          Used to convert local salary cost to USD, 
+          eliminating daily FX volatility from P&L figures.
+
+      - name: stable_cost_usd
+        description: >
+          Standardized operational cost per timesheet entry in USD, 
+          calculated as cost_local divided by monthly_avg_cost_fx_rate. 
+          Uses SAFE_DIVIDE to prevent division-by-zero errors. 
+          Preferred cost metric for P&L analysis.
+
+      - name: stable_profit_usd
+        description: >
+          Net profitability per timesheet entry calculated as 
+          revenue_usd minus stable_cost_usd. 
+          Core KPI for project and client profitability dashboards.
+
+      # ── Analytical Segments ───────────────────────────────────
+
+      - name: productivity_segment
+        description: >
+          Pre-calculated analytical label based on hours_worked thresholds: 
+          'Burnout Risk' (> 9 hrs), 'Under-Utilized' (< 4 hrs on non-BENCH), 
+          'Correction Record' (negative hours), 'Optimal' (all others). 
+          Used for workforce wellness monitoring in Power BI.
+
+      - name: is_bench_entry
+        description: >
+          Boolean flag (TRUE when project_id = 'BENCH') identifying 
+          timesheet entries where the employee was on the bench 
+          (not assigned to a billable project). 
+          Used for bench cost analysis and capacity planning.

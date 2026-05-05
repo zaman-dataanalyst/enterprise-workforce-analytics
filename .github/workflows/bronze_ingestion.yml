@@ -1,9 +1,15 @@
-name: Workforce Bronze Ingestion  # Display name in the GitHub Actions dashboard
+# =============================================================================
+# Workflow: Workforce Bronze Ingestion
+# Purpose:  Automates the execution of the Python ingestion script to BigQuery.
+# Trigger:  Daily at midnight (UTC) or manual trigger.
+# =============================================================================
+
+name: Workforce Bronze Ingestion
 
 on:
-  workflow_dispatch: # Allows manual triggering of the pipeline
+  workflow_dispatch: # Allows manual execution from the UI
   schedule:
-    - cron: '0 0 * * *' # Automatic daily run at midnight (UTC)
+    - cron: '0 0 * * *' # Daily at midnight UTC
 
 jobs:
   build-and-run:
@@ -11,10 +17,10 @@ jobs:
 
     steps:
       - name: Checkout Repository Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4 # Updated to v4 (Latest Enterprise Standard)
 
       - name: Set up Python 3.11
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5 # Updated to v5 (Latest stability)
         with:
           python-version: '3.11'
 
@@ -23,20 +29,20 @@ jobs:
           pip install pandas faker google-cloud-bigquery google-cloud-storage requests pandas-gbq>=0.26.1 pyarrow db-dtypes
 
       - name: Authenticate to Google Cloud
-        # Converts the GCP_KEY_JSON secret into a temporary physical file
+        # SECURE: Converts GitHub Secret into a temporary credential file
         run: echo '${{ secrets.GCP_KEY_JSON }}' > gcp-key.json
 
       - name: Run Bronze Ingestion Pipeline
         env:
-          # Injecting GitHub Secrets into the environment for Python access
+          # Mapping GitHub Secrets to Python environment variables
           OXR_APP_ID: ${{ secrets.OXR_APP_ID }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           GOOGLE_APPLICATION_CREDENTIALS: gcp-key.json
         run: |
-          # Ensure the path and filename matches your repository structure
-          python python_etl/ingest_workforce_bronze.py
+          # CRITICAL FIX: Changed folder from 'python_etl' to 'ingestion' to match repo structure
+          python ingestion/ingest_workforce_bronze.py
 
       - name: Cleanup Security Keys
-        # Deletes the key file after execution for security compliance
+        # SECURITY: Ensures gcp-key.json is deleted even if the script fails
         if: always()
         run: rm -f gcp-key.json

@@ -3,5 +3,16 @@ version: 2
 sources:
   - name: bronze_layer
     database: enterprise-workforce-analytics
+    description: "Raw HRIS ingestion layer."
+    
+    # 🚨 TEMPORARILY DISABLED FOR DEV PHASE (Avoids pipeline failure)
+    # The latest data is from March 2026. 
+    # Uncomment and enable this ONLY in Production when automated daily ingestion is active.
+    # freshness:
+    #   warn_after: {count: 24, period: hour}
+    #   error_after: {count: 48, period: hour}
+    # loaded_at_field: load_timestamp
+
     tables:
       - name: raw_hris_timesheets_v1
+        description: "Primary landing table for workforce transactions."
