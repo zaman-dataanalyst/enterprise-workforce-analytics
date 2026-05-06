@@ -30,7 +30,7 @@ jobs:
 
       - name: Authenticate to Google Cloud
         # SECURE: Converts GitHub Secret into a temporary credential file
-        run: echo '${{ secrets.GCP_KEY_JSON }}' > gcp-key.json
+        run: echo '${{ secrets.GCP_CREDENTIALS }}' > gcp-key.json
 
       - name: Run Bronze Ingestion Pipeline
         env:
