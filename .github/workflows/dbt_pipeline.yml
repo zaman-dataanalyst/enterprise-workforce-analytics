@@ -53,6 +53,10 @@ jobs:
         run: dbt deps
         working-directory: ./workforce_analytics
 
+      - name: Load CSV Seeds to Silver Layer
+        run: dbt seed --target prod
+        working-directory: ./workforce_analytics
+
       - name: Execute dbt Models (Silver to Gold Star Schema)
         run: dbt run --target prod
         working-directory: ./workforce_analytics
