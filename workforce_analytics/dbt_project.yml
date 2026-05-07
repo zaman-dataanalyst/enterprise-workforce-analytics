@@ -44,3 +44,7 @@ models:
       +materialized: table
       +schema: gold_layer    # Exactly matches BigQuery dataset
       +tags: ["hris_reporting", "analytics_marts"]
+
+    seeds:
+      workforce_analytics:
+        +schema: silver_layer
