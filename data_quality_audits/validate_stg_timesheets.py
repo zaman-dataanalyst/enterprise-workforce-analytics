@@ -31,8 +31,8 @@ logger = logging.getLogger("SilverAudit")
 # CONSTANTS
 # ─────────────────────────────────────────────────────────────────────────────
 VALID_EMPLOYMENT_TYPES = {"FULL-TIME", "CONTRACTOR", "UNKNOWN"}
-VALID_EMPLOYMENT_STATUS = {"ACTIVE", "UNKNOWN"}
-VALID_PROJECT_STATUS    = {"ACTIVE", "UNKNOWN"}
+VALID_EMPLOYMENT_STATUS = {"ACTIVE", "INACTIVE", "UNKNOWN"}
+VALID_PROJECT_STATUS    = {"ACTIVE", "COMPLETED", "ON HOLD", "UNKNOWN"}
 VALID_PROJECT_TYPES = {"T&M", "FIXED PRICE", "INTERNAL", "UNKNOWN"}
 VALID_PRIORITIES = {"CRITICAL", "HIGH", "MEDIUM", "LOW", "UNKNOWN"}
 VALID_CLIENT_SEGMENTS = {"B2B", "B2C", "B2G", "CORPORATE", "INTERNAL", "UNKNOWN"}
@@ -46,8 +46,14 @@ VALID_LOCATION_COUNTRIES = {
 
 VALID_CLIENT_COUNTRIES = VALID_LOCATION_COUNTRIES
 
-VALID_DEPARTMENTS = {"CLOUD", "ENGINEERING", "ANALYTICS", "DATA SCIENCE", "UNKNOWN"}
-VALID_DESIGNATIONS = {"DATA ANALYST", "DATA ENGINEER", "QA ENGINEER", "UNKNOWN"}
+VALID_DEPARTMENTS = {
+    "DATA ENGINEERING", "ANALYTICS & BI",
+    "CLOUD & INFRASTRUCTURE", "DATA SCIENCE & AI", "UNKNOWN"
+}
+VALID_DESIGNATIONS = {
+    "DATA ANALYST", "DATA ENGINEER", "QA ENGINEER",
+    "BI DEVELOPER", "DATA SCIENTIST", "UNKNOWN"
+}
 VALID_TASK_CATEGORIES = {
     "INTERNAL TRAINING", "BUG FIX", "DEPLOYMENT",
     "MEETING", "DEVELOPMENT", "LEAVE/TRAINING", "UNKNOWN"
@@ -362,11 +368,11 @@ class TimesheetValidator:
 
     def check_data_quality_flag_values(self):
         if not self._col("data_quality_flag"): return
-        valid_flags = {"VALID", "CORRECTED"}
+        valid_flags = {"VALID", "CORRECTED", "ESTIMATED"}
         found_flags = set(self.df["data_quality_flag"].dropna().str.upper().unique())
         invalid = found_flags - valid_flags
         if not invalid:
-            self._pass("DQ_FLAG_VALUES", "data_quality_flag: Only 'VALID'/'CORRECTED' present.")
+            self._pass("DQ_FLAG_VALUES", "data_quality_flag: Only 'VALID'/'CORRECTED'/'ESTIMATED' present.")
         else:
             self._fail("DQ_FLAG_VALUES", f"data_quality_flag: Unexpected values found: {invalid}")
 

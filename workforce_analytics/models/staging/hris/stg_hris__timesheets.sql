@@ -266,10 +266,11 @@ fix_text_corruption AS (
 
         -- ── department ────────────────────────────────────────────────────────
         COALESCE(
-            REPLACE(REPLACE(
+            REPLACE(REPLACE(REPLACE(
                 UPPER(REGEXP_REPLACE(department, r'[0-9]', 'I')),
             'ENGINAERING', 'ENGINEERING'),
-            'SCIANCE',     'SCIENCE')
+            'SCIANCE',     'SCIENCE'),
+            'ANALYTACS',   'ANALYTICS')
         , 'UNKNOWN') AS department,
 
         -- ── task_category ─────────────────────────────────────────────────────
@@ -436,10 +437,17 @@ standardize_categoricals AS (
             ELSE COALESCE(UPPER(TRIM(project_type)), 'UNKNOWN')
         END AS project_type,
 
-        -- ── Project Status (3 variants → 1 active value) ──────────────────────
+        -- ── Project Status (9 variants → 3 canonical values) ────────────────
         CASE UPPER(TRIM(project_status))
-            WHEN 'ACTIVE' THEN 'ACTIVE'
-            WHEN 'ACT'    THEN 'ACTIVE'
+            WHEN 'ACTIVE'    THEN 'ACTIVE'
+            WHEN 'ACT'       THEN 'ACTIVE'
+            WHEN 'COMPLETED' THEN 'COMPLETED'
+            WHEN 'DONE'      THEN 'COMPLETED'
+            WHEN 'CLOSED'    THEN 'COMPLETED'
+            WHEN 'ON HOLD'   THEN 'ON HOLD'
+            WHEN 'ON-HOLD'   THEN 'ON HOLD'
+            WHEN 'ON_HOLD'   THEN 'ON HOLD'
+            WHEN 'PAUSED'    THEN 'ON HOLD'
             ELSE COALESCE(UPPER(TRIM(project_status)), 'UNKNOWN')
         END AS project_status,
 

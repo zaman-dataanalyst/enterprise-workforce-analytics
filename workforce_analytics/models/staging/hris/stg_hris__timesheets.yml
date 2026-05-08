@@ -140,3 +140,26 @@ models:
       - name: is_negative_hour_correction
         description: >
           Derived Boolean Flag. True if the record is a valid financial correction (negative hours).
+
+      - name: project_status
+        description: "Standardized project lifecycle status — Active, Completed, or On Hold."
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['ACTIVE', 'COMPLETED', 'ON HOLD', 'UNKNOWN']
+
+      - name: designation
+        description: "Standardized employee job title including new BI Developer and Data Scientist roles."
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['DATA ANALYST', 'DATA ENGINEER', 'QA ENGINEER', 'BI DEVELOPER', 'DATA SCIENTIST', 'UNKNOWN']
+
+      - name: data_quality_flag
+        description: >
+          Data governance label applied during Bronze ingestion.
+          VALID = clean original record; CORRECTED = reversal entry; ESTIMATED = fallback FX or anomalous hours.
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['VALID', 'CORRECTED', 'ESTIMATED', 'UNKNOWN']
