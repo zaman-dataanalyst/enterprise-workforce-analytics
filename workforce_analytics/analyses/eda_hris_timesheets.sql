@@ -9,7 +9,7 @@ PURPOSE  : Identify every category of data problem BEFORE writing stg.sql.
            [TOP]    WHY and IMPACT (The Hypothesis)
            [QUERY]  Execution
            [BOTTOM] RESULT and ACTION (The Evidence & Next Steps)
-TOTAL COLUMNS : 63 | TOTAL ROWS (full table): ~3.7M
+TOTAL COLUMNS : 63 | TOTAL ROWS (full table): 3,750,002
 ================================================================================
 */
 
@@ -33,7 +33,7 @@ SELECT
     COUNT(DISTINCT batch_id) AS distinct_batches,
     CURRENT_TIMESTAMP() AS eda_run_at
 FROM `enterprise-workforce-analytics.bronze_layer.raw_hris_timesheets_v1`;
--- RESULT: Total rows: 3,727,481. Unique timesheet_ids: 3,727,481 (0 duplicates). Employees: 5,000.
+-- RESULT: total_rows=3,750,002 | distinct_timesheet_ids=3,750,002 | duplicate_timesheet_ids=0 | distinct_employees=5,000 | distinct_projects=401 | distinct_clients=174 | earliest=2023-05-08 | latest=2026-05-08 | distinct_batches=1
 -- ACTION: Baseline confirmed. Proceed with 1:1 row mapping in Staging.
 
 -- 0.2 Entry type split (original vs correction records)
@@ -47,7 +47,7 @@ SELECT
 FROM `enterprise-workforce-analytics.bronze_layer.raw_hris_timesheets_v1`
 GROUP BY entry_type, is_correction
 ORDER BY row_count DESC;
--- RESULT: 3,676,573 (98.63%) Original rows | 50,908 (1.37%) Correction rows.
+-- RESULT: original | False | 3,698,468 | 98.63% | correction | True | 51,534 | 1.37%
 -- ACTION: Keep both entry types in Staging. Ensure boolean flags are preserved for Gold layer netting.
 
 
@@ -57,7 +57,7 @@ ORDER BY row_count DESC;
 
 -- 1.1 True NULL count across ALL columns
 -- WHY: Missing dimensional data breaks JOINs and creates orphan records in the Star Schema.
--- IMPACT: Power BI slicers will show "(Blank)" for over 1.8 Lakh rows, ruining the user experience.
+-- IMPACT: Power BI slicers will show "(Blank)" for ~1.87 Lakh rows per dimension column, ruining the user experience.
 SELECT
     'timesheet_id'AS col , COUNTIF(timesheet_id IS NULL) AS true_nulls FROM `enterprise-workforce-analytics.bronze_layer.raw_hris_timesheets_v1` UNION ALL
 SELECT 'emp_id', COUNTIF(emp_id IS NULL) FROM `enterprise-workforce-analytics.bronze_layer.raw_hris_timesheets_v1` UNION ALL
@@ -86,7 +86,7 @@ SELECT 'client_country', COUNTIF(client_country IS NULL) FROM `enterprise-workfo
 SELECT 'task_category', COUNTIF(task_category IS NULL) FROM `enterprise-workforce-analytics.bronze_layer.raw_hris_timesheets_v1` UNION ALL
 SELECT 'original_timesheet_id', COUNTIF(original_timesheet_id IS NULL) FROM `enterprise-workforce-analytics.bronze_layer.raw_hris_timesheets_v1`
 ORDER BY true_nulls DESC;
--- RESULT: Heavy True NULLs found: client_name (186,941), client_industry (186,913), designation (186,760), location_city (186,462).
+-- RESULT: location_city (188,062) | project_name (187,780) | employee_name (187,498) | client_industry (187,311) | designation (187,241) | client_name (186,987) | emp_id=0 | work_date=0 | hours_worked=0 | timesheet_id=0
 -- ACTION: Use COALESCE(col, 'UNKNOWN') for dimension columns in Staging to ensure referential integrity.
 
 -- 1.2 "null" STRING injection — columns where literal text "null" appears
@@ -139,7 +139,7 @@ SELECT
     COUNTIF(employment_type != TRIM(employment_type)) AS employment_type_ws,
     COUNTIF(salary_currency != TRIM(salary_currency)) AS salary_currency_ws
 FROM `enterprise-workforce-analytics.bronze_layer.raw_hris_timesheets_v1`;
--- RESULT: Massive contamination. employee_name (310,033), designation (309,086), city (309,640), task_category (325,616) have hidden whitespace.
+-- RESULT: employee_name (311,289) | designation (312,293) | skill_primary (328,381) | department (327,545) | location_city (311,685) | project_name (311,373) | client_name (311,805) | client_industry (310,833) | task_category (327,134) | employment_type=0 | salary_currency=0
 -- ACTION: Wrap every single string column in TRIM() without exception in Staging.
 
 
@@ -157,8 +157,8 @@ SELECT
 FROM `enterprise-workforce-analytics.bronze_layer.raw_hris_timesheets_v1`
 GROUP BY employment_type
 ORDER BY row_count DESC;
--- RESULT: 7 variants found. 'Full-time' (41%), 'Contractor' (38%), plus fragments like 'CWR', 'contract', 'ft', 'FTE'.
--- ACTION: Use CASE WHEN to force mapping to strictly 'FULL_TIME' and 'CONTRACTOR'.
+-- RESULT: 7 variants. Contractor (40.73%) | Full-time (39.28%) | contract (5.08%) | CWR (5.08%) | ft (3.28%) | FTE (3.27%) | full time (3.27%)
+-- ACTION: Use CASE WHEN to force mapping to strictly 'FULL-TIME' and 'CONTRACTOR'.
 
 -- 3.2 employment_status 
 -- WHY: Active vs Inactive tracking.
@@ -169,7 +169,7 @@ SELECT
 FROM `enterprise-workforce-analytics.bronze_layer.raw_hris_timesheets_v1`
 GROUP BY employment_status
 ORDER BY row_count DESC;
--- RESULT: 3 variants found → Active, active, ACT.
+-- RESULT: 6 variants. Active (2,761,937) | ACT (344,436) | active (344,376) | Inactive (239,411) | inactive (30,016) | INACTIVE (29,826)
 -- ACTION: Map entirely to 'ACTIVE' / 'INACTIVE'.
 
 -- 3.3 project_status
@@ -181,8 +181,8 @@ SELECT
 FROM `enterprise-workforce-analytics.bronze_layer.raw_hris_timesheets_v1`
 GROUP BY project_status
 ORDER BY row_count DESC;
--- RESULT: 3 variants found → Active, active, ACT.
--- ACTION: Map entirely to 'ACTIVE' / 'COMPLETED'.
+-- RESULT: 10 variants. Active (2,205,771) | Completed (604,976) | ACT (275,723) | active (275,570) | On Hold (189,216) | done (75,717) | Closed (75,698) | Paused (15,894) | ON_HOLD (15,844) | on-hold (15,593)
+-- ACTION: Map to 'ACTIVE' / 'COMPLETED' / 'ON HOLD'. done+Closed→COMPLETED, Paused+ON_HOLD+on-hold→ON HOLD.
 
 -- 3.4 salary_currency 
 -- WHY: Identify currency anomalies before financial calculations.
@@ -193,7 +193,7 @@ SELECT
 FROM `enterprise-workforce-analytics.bronze_layer.raw_hris_timesheets_v1`
 GROUP BY salary_currency
 ORDER BY row_count DESC;
--- RESULT: 23 severe variants including symbols (₹, £, €, $) and aliases (Rs, pkr).
+-- RESULT: PKR (1,059,734) | INR (752,942) | AED (321,847) | USD (221,224) | GBP (196,242) | SAR (160,320) | Rs (133,136) | pkr (132,447) | EUR (103,027) | CAD (102,299) | plus ₹ SGD and other symbol variants
 -- ACTION: Apply UPPER(TRIM()) and explicitly map symbols/aliases to 3-letter ISO codes (PKR, INR, USD, etc.).
 
 -- 3.5 project_type 
@@ -205,8 +205,8 @@ SELECT
 FROM `enterprise-workforce-analytics.bronze_layer.raw_hris_timesheets_v1`
 GROUP BY project_type
 ORDER BY row_count DESC;
--- RESULT: 9 variants found. T&M = t&m = Time & Material | Fixed = fixed price = F.P.
--- ACTION: Standardize to 'T_M', 'FIXED_PRICE', 'INTERNAL'.
+-- RESULT: 9 variants. T&M (1,099,810) | Fixed (990,934) | Internal (909,832) | t&m (137,070) | Time & Material (136,841) | fixed price (123,911) | F.P (123,423) | internal (114,347) | INTERNAL (113,834)
+-- ACTION: Standardize to 'T&M', 'FIXED PRICE', 'INTERNAL'.
 
 -- 3.6 project_priority 
 -- WHY: Check if SLA priorities are unified.
@@ -217,8 +217,8 @@ SELECT
 FROM `enterprise-workforce-analytics.bronze_layer.raw_hris_timesheets_v1`
 GROUP BY project_priority
 ORDER BY row_count DESC;
--- RESULT: Text scale (Critical, High, Medium, Low) mixed with Numeric scale (P0, P1, P2, P3).
--- ACTION: Map entirely to Text scale (CRITICAL, HIGH, MEDIUM, LOW).
+-- RESULT: 12 variants. Low (1,326,716) | Medium (811,086) | High (644,638) | Critical (218,967) | low (165,211) | P3 (165,056) | med (101,340) | P2 (101,232) | high (80,722) | P1 (80,246) | critical (27,405) | P0 (27,383)
+-- ACTION: Map entirely to Text scale (CRITICAL, HIGH, MEDIUM, LOW). P0→CRITICAL, P1→HIGH, P2→MEDIUM, P3→LOW.
 
 -- 3.7 client_segment 
 -- WHY: Validate business segmentation.
@@ -229,8 +229,8 @@ SELECT
 FROM `enterprise-workforce-analytics.bronze_layer.raw_hris_timesheets_v1`
 GROUP BY client_segment
 ORDER BY row_count DESC;
--- RESULT: Aliases present (B2B/b2b/Business to Business | B2G/Government/Govt).
--- ACTION: Standardize via UPPER() and CASE mapping.
+-- RESULT: 14 variants. B2B (1,402,724) | Internal (909,981) | B2C (453,108) | B2G (233,796) | b2b (117,043) | Corporate (117,030) | Business to Business (116,982) | INTERNAL (114,308) | internal (113,724) | Consumer (56,630) | b2c (56,118) | Government (19,527) | Govt (19,517) | b2g (19,514)
+-- ACTION: Standardize via UPPER() and CASE mapping. Business to Business→B2B, Consumer→B2C, Government+Govt→B2G, Corporate→CORPORATE.
 
 -- 3.8 department
 -- WHY: Validate organizational hierarchy.
@@ -241,7 +241,7 @@ SELECT
 FROM `enterprise-workforce-analytics.bronze_layer.raw_hris_timesheets_v1`
 GROUP BY department
 ORDER BY row_count DESC;
--- RESULT: Case variants plus digit corruption (e.g., 'Eng1naering', 'Analyt1cs').
+-- RESULT: Analytics & BI (988,747) | Data Science & AI (745,179) | Data Engineering (470,075) | Cloud & Infrastructure (234,664) | plus case/whitespace/digit variants (Analyt1cs & BI, Data Eng1naering, Data Sc1ance & AI) per cluster
 -- ACTION: INITCAP(TRIM(REGEXP_REPLACE(department, r'1', 'i'))) then map clean categories.
 
 -- 3.9 designation 
@@ -253,7 +253,7 @@ SELECT
 FROM `enterprise-workforce-analytics.bronze_layer.raw_hris_timesheets_v1`
 GROUP BY designation
 ORDER BY row_count DESC;
--- RESULT: Base roles exist but fragmented by corruption (Data Eng1naer) and case.
+-- RESULT: Data Analyst (561,332) | QA Engineer (468,732) | Data Scientist (463,734) | Data Engineer (447,231) | BI Developer (440,711) | NULL (187,241) | plus case/whitespace/digit variants (QA Eng1naer, DATA ANALYST, etc.) per cluster
 -- ACTION: Clean digits via REGEXP first, then INITCAP().
 
 -- 3.10 task_category 
@@ -265,7 +265,7 @@ SELECT
 FROM `enterprise-workforce-analytics.bronze_layer.raw_hris_timesheets_v1`
 GROUP BY task_category
 ORDER BY row_count DESC;
--- RESULT: 8 categories deeply fragmented by typos (Intarnal Tra1ning, Maet1ng, Daployment).
+-- RESULT: Internal Training (681,446) | Meeting (425,047) | Development (424,622) | Deployment (424,452) | Bug Fix (423,797) | Leave/Training (57,749) | plus Intarnal Tra1ning (92,137) / INTERNAL TRAINING / whitespace variants per category
 -- ACTION: Use REGEXP_CONTAINS inside CASE statement to catch and standardise all typo variants.
 
 
@@ -287,7 +287,7 @@ SELECT
     COUNTIF(REGEXP_CONTAINS(client_industry,  r'[0-9]'))                               AS corrupt_client_industries,
     COUNTIF(REGEXP_CONTAINS(project_name,     r'[0-9]'))                               AS project_name_with_numbers_DO_NOT_CLEAN
 FROM `enterprise-workforce-analytics.bronze_layer.raw_hris_timesheets_v1`;
--- RESULT: Massive systemic corruption found. Names (187,927), depts (244,714), designations (205,135). Project names have 365,082 valid numbers.
+-- RESULT: corrupt_employee_names=188,698 | corrupt_designations=185,033 | corrupt_departments=296,716 | corrupt_skill_primary=193,074 | corrupt_task_categories=213,830 | corrupt_cities=69,332 | corrupt_client_names=114,271 | corrupt_client_industries=109,400 | project_name_valid_numbers=342,237
 -- ACTION: Use REGEXP_REPLACE(col, r'1', 'i') on all string columns EXCEPT project_name.
 -- WARNING: DO NOT APPLY regex cleaning to project_name to protect valid numeric strings.
 
@@ -329,7 +329,7 @@ WHERE REGEXP_CONTAINS(location_city, r'[0-9]')
    OR LOWER(TRIM(location_city)) IN ('lahora','bangalora','naw york','s1ngapora','duba1','r1yadh','barl1n')
 GROUP BY location_city
 ORDER BY frequency DESC;
--- RESULT: Lahora (109k), Bangalora (80k), Duba1 (30k), Naw York (22k), Barl1n (7.9k).
+-- RESULT: Lahora (110,030) | Bangalora (78,131) | Duba1 (33,232) | Naw York (23,175) | R1yadh (16,581) | Barl1n (10,730) | S1ngapora (8,789)
 -- ACTION: Needs explicit HARDCODED CASE overrides in Staging (regex won't fix 'Lahora' to 'Lahore').
 
 -- 4.5 All unique corrupt client_industry values
@@ -343,7 +343,7 @@ WHERE REGEXP_CONTAINS(client_industry, r'[0-9]')
    OR LOWER(TRIM(client_industry)) IN ('intarnal','rata1l','edtach','haalthcare','f1ntach')
 GROUP BY client_industry
 ORDER BY frequency DESC;
--- RESULT: Intarnal (94k), F1nTach (62k), EdTach (55k), Rata1l (52k), Haalthcare (44k).
+-- RESULT: Intarnal (94,861) | EdTach (61,945) | F1nTach (57,846) | Rata1l (51,554) | Haalthcare (45,632)
 -- ACTION: Regex replace + CASE mapping to standard industry names.
 
 -- 4.6 Validate which project_name numbers are VALID
@@ -467,7 +467,7 @@ SELECT
     MAX(allocation_pct) AS alloc_max,
     COUNTIF(allocation_pct > 1) AS alloc_over_1
 FROM `enterprise-workforce-analytics.bronze_layer.raw_hris_timesheets_v1`;
--- RESULT: Hours range from -8 to 8. Exactly 50,908 rows have negative hours. Utilization is confirmed on a 0-1 scale. No hours > 24 found.
+-- RESULT: hw_min=-8.0 | hw_max=8.0 | hw_avg=4.6939 | hw_negative=51,534 | hw_over_24=0 | hw_zero=1,137,573 | bh_negative=51,525 | util_max=1.0 | util_over_1=0 | alloc_max=1.0 | alloc_over_1=0
 -- ACTION: Pass through as-is. Do not apply *100 to utilization.
 
 -- 7.2 Financial columns — profile
@@ -489,7 +489,7 @@ SELECT
     COUNTIF(hourly_rate_usd < 0) AS rate_negative,
     COUNTIF(hourly_rate_usd = 0 AND is_billable = true) AS billable_zero_rate
 FROM `enterprise-workforce-analytics.bronze_layer.raw_hris_timesheets_v1`;
--- RESULT: 50,908 rows contain negative revenue and cost. No impossible outliers found. No billable rows with 0 rate.
+-- RESULT: rev range -3,000 to 3,000 | rev_avg=533.25 | rev_negative=51,525 | cost range -808.53 to 824.42 | cost_negative=51,534 | profit_negative=93,505 | rate range 0-375 | rate_negative=0 | billable_zero_rate=0
 -- ACTION: Data is structurally sound. Proceed without applying capping rules.
 
 -- 7.3 Negative hours breakdown 
@@ -505,7 +505,7 @@ SELECT
 FROM `enterprise-workforce-analytics.bronze_layer.raw_hris_timesheets_v1`
 WHERE hours_worked < 0
 GROUP BY entry_type, is_correction, data_quality_flag;
--- RESULT: 100% of negative hours (50,908 rows) belong strictly to entry_type='correction' and data_quality_flag='CORRECTED'.
+-- RESULT: All 51,534 negative-hour rows: entry_type=correction | is_correction=True | data_quality_flag=CORRECTED | min_hours=-8.0 | max_hours=-0.5
 -- ACTION: Do NOT delete. They are valid financial offsets for P&L reporting. Ensure logic allows negative values.
 
 
@@ -520,7 +520,7 @@ SELECT
     COUNT(*) AS total_rows,
     COUNTIF(ABS((billable_hours + non_billable_hours) - hours_worked) > 0.01) AS hours_math_violations
 FROM `enterprise-workforce-analytics.bronze_layer.raw_hris_timesheets_v1`;
--- RESULT: 0 violations found across 3.7M rows.
+-- RESULT: 0 violations across 3,750,002 rows.
 -- ACTION: Arithmetic is trustworthy.
 
 -- 8.2 Utilization scale confirmation: utilization_pct = billable/capacity
@@ -540,7 +540,7 @@ WHERE capacity_hours > 0;
 SELECT
     COUNTIF(ABS(profit_usd - (revenue_usd - cost_usd)) > 0.05) AS profit_math_violations
 FROM `enterprise-workforce-analytics.bronze_layer.raw_hris_timesheets_v1`;
--- RESULT: 0 violations found.
+-- RESULT: 0 profit math violations across 3,750,002 rows.
 -- ACTION: Math is verified.
 
 -- 8.4 Revenue math: revenue_usd ≈ billable_hours × hourly_rate_usd
@@ -605,7 +605,7 @@ SELECT
 FROM `enterprise-workforce-analytics.bronze_layer.raw_hris_timesheets_v1`
 WHERE designation IS NOT NULL AND TRIM(designation) NOT IN ('', 'null')
   AND skill_primary IS NOT NULL AND TRIM(skill_primary) NOT IN ('', 'null');
--- RESULT: 2,509,490 rows (70.88%) have conflicting designation and primary skill.
+-- RESULT: total_valid_rows=3,562,761 | skill_designation_mismatch_rows=2,945,020 | mismatch_pct=82.66%
 -- ACTION: Pass through as-is, but create a boolean `is_skill_mismatch` flag for downstream analysis.
 
 -- 9.2 Mismatch breakdown by employee 
@@ -687,7 +687,7 @@ SELECT
     COUNTIF(work_date < DATE('2020-01-01')) AS very_old_dates,
     DATE_DIFF(MAX(work_date), MIN(work_date), DAY) AS date_span_days
 FROM `enterprise-workforce-analytics.bronze_layer.raw_hris_timesheets_v1`;
--- RESULT: Data spans 2023-03-26 to 2026-03-27. No future dates. No historical junk.
+-- RESULT: earliest=2023-05-08 | latest=2026-05-08 | date_span=1,096 days | future_dates=0 | pre-2020_records=0
 -- ACTION: Date boundaries are clean. No filtering needed.
 
 -- 11.2 Monthly row volume
@@ -715,7 +715,7 @@ SELECT
 FROM `enterprise-workforce-analytics.bronze_layer.raw_hris_timesheets_v1`
 GROUP BY load_date
 ORDER BY load_date;
--- RESULT: 2 distinct load batches found. 
+-- RESULT: 1 load batch | load_date=2026-05-08 | rows_loaded=3,750,002 | batch_count=1
 -- ACTION: Proceed normally.
 
 
@@ -883,7 +883,7 @@ LIMIT 20;
 -- SECTION 15: DATA QUALITY FLAG AUDIT
 -- ============================================================================
 
--- WHY: data_quality_flag column ('VALID','CORRECTED') must align perfectly with entry_type.
+-- WHY: data_quality_flag column ('VALID','CORRECTED','ESTIMATED') must align perfectly with entry_type.
 -- IMPACT: Any mismatch = pipeline logic failure in the Bronze ingestion layer.
 SELECT
     data_quality_flag,
@@ -894,7 +894,7 @@ SELECT
 FROM `enterprise-workforce-analytics.bronze_layer.raw_hris_timesheets_v1`
 GROUP BY data_quality_flag, entry_type, is_correction, is_anomaly
 ORDER BY row_count DESC;
--- RESULT: Exact Match. 3,676,573 VALID and 50,908 CORRECTED rows aligned perfectly.
+-- RESULT: VALID | original | False | False | 3,698,468 | CORRECTED | correction | True | False | 51,534 | No ESTIMATED rows in current batch
 -- ACTION: Flags are safe to use in downstream models.
 
 
@@ -943,7 +943,7 @@ WITH base AS (
     FROM `enterprise-workforce-analytics.bronze_layer.raw_hris_timesheets_v1`
 )
 SELECT * FROM base;
--- RESULT: Dashboard outputs 3,727,481 rows, confirming exactly 187k+ corrupt names, 310k+ whitespace issues, and 0 math violations.
+-- RESULT: total_rows=3,750,002 | all missing_*=0 | names_whitespace=311,289 | cities_whitespace=311,685 | corrupt_names=188,698 | corrupt_depts=296,716 | corrupt_task_cats=327,865 | negative_hours=51,534 | hours_math_violations=0 | numeric_priority=373,917 | non_std_currency=292,325 | city_typos=280,668 | broken_correction_flags=0
 -- ACTION: Proceed to write `stg_hris__timesheets.sql` using the blueprint below.
 
 /*
@@ -952,9 +952,9 @@ REAL-WORLD DATA QUALITY FINDINGS (The Blueprint for stg_hris__timesheets.sql)
 ================================================================================
 
 PRIORITY 1 — DETERMINISTIC FIXES (Must resolve in Staging):
-  ✗ Alphanumeric Corruption: Digit '1' has infected names, departments, cities, and designations (187k+ affected rows).
+  ✗ Alphanumeric Corruption: Digit '1' has infected names (188,698), departments (296,716), designations (185,033), skill_primary (193,074).
     → ACTION: REGEXP_REPLACE(col, r'1', 'i'). Exempt project_name to protect valid numbers.
-  ✗ Whitespace Infection: Over 300k+ rows per string column have hidden spaces.
+  ✗ Whitespace Infection: 311k–328k rows per string column have hidden spaces.
     → ACTION: Universal TRIM() application.
   ✗ Categorical Chaos: 20+ columns suffer from severe casing and aliasing issues (e.g., 23 variants for Currency, 7 for Employment Type).
     → ACTION: Standardize via UPPER()/LOWER() and exhaustive CASE WHEN mapping.
@@ -962,7 +962,7 @@ PRIORITY 1 — DETERMINISTIC FIXES (Must resolve in Staging):
     → ACTION: Hardcoded CASE WHEN overrides for known city typos.
 
 PRIORITY 2 — BUSINESS LOGIC (Validated, Do Not Alter):
-  ✓ Negative Hours & Revenue: Confirmed exactly 50,908 rows. All map strictly to 'correction' entry types.
+  ✓ Negative Hours & Revenue: Confirmed exactly 51,534 rows. All map strictly to 'correction' entry types.
     → ACTION: Pass through as-is. Required for P&L netting.
   ✓ Financial Math: Billable + Non-Billable exactly matches Hours Worked. Profit math holds perfectly.
     → ACTION: No recalculation required.
@@ -970,7 +970,7 @@ PRIORITY 2 — BUSINESS LOGIC (Validated, Do Not Alter):
     → ACTION: Standard NULLIF handling is sufficient.
 
 PRIORITY 3 — ARCHITECTURAL WARNINGS (Handled in Gold Layer):
-  ! Skill/Designation Mismatch: ~71% of rows show mismatch. Escalating to HR.
+  ! Skill/Designation Mismatch: 82.66% of valid rows (2,945,020 / 3,562,761) show mismatch. Escalating to HR.
   ! Dimensional Inconsistency: Same emp_id has multiple department/name spellings due to historical typos.
     → ACTION: Staging will clean strings; Dimensions (dim_employees) will aggregate to unique records.
 ================================================================================
