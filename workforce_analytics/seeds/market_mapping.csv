@@ -1,14 +1,14 @@
 ﻿country,market_tier
-USA,Tier 1 Market
-UK,Tier 1 Market
-CA,Tier 1 Market
-DE,Tier 1 Market
-NL,Tier 1 Market
-SE,Tier 1 Market
-AU,Tier 1 Market
-UAE,Middle East Hub
-SA,Middle East Hub
-QA,Middle East Hub
-PK,Offshore Center
-IN,Offshore Center
-SG,Offshore Center
+United States,TIER 1
+United Kingdom,TIER 1
+Canada,TIER 1
+Germany,TIER 1
+Netherlands,TIER 1
+Sweden,TIER 1
+Australia,TIER 1
+Singapore,TIER 1
+United Arab Emirates,TIER 2
+Saudi Arabia,TIER 2
+Qatar,TIER 2
+Pakistan,TIER 3
+India,TIER 3

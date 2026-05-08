@@ -360,10 +360,17 @@ models:
 
       - name: skill_alignment_status
         description: >
-          Analytical classification comparing skill_primary to 
-          the employee's designation: 'Aligned' (match) or 
-          'Skill Mismatch' (no match). 
+          Analytical classification comparing skill_primary to
+          the employee's designation: 'Aligned' (match) or
+          'Skill Mismatch' (no match).
           Key KPI for workforce planning dashboards.
+
+      - name: skill_categories
+        description: >
+          Pipe-separated list of capability labels sourced from the
+          skill_categories reference seed (e.g., 'ETL Pipelines & dbt | Python Programming').
+          NULL if skill_primary has no matching entry in the reference table.
+          Enables multi-category skill filtering in Power BI slicers.
 
   # ─────────────────────────────────────────────────────────────
   # FACT TABLE — Grain: one row per timesheet_id

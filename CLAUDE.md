@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Enterprise workforce analytics platform built on Google BigQuery using a **Medallion architecture** (Bronze → Silver → Gold). The pipeline ingests HRIS timesheet data, transforms it through dbt, and surfaces a star schema for BI consumption.
+Enterprise workforce analytics platform built on Google BigQuery using a **Medallion architecture** (Bronze → Silver → Gold). The pipeline ingests **synthetic** HRIS timesheet data (generated via Faker/OpenExchangeRates), transforms it through dbt, and surfaces a star schema for BI consumption.
 
 - **~3.7M rows** of timesheet data spanning ~1,098 days
 - **dbt 1.11.1** with BigQuery adapter
@@ -42,20 +42,40 @@ dbt compile
 dbt docs generate && dbt docs serve
 ```
 
+### Local dbt authentication
+
+dbt requires a `~/.dbt/profiles.yml`. The CI pipeline generates this dynamically; for local development create it manually:
+
+```yaml
+workforce_analytics:
+  target: prod
+  outputs:
+    prod:
+      type: bigquery
+      method: oauth
+      project: enterprise-workforce-analytics
+      dataset: gold_layer
+      threads: 4
+      location: US
+```
+
+Authentication requires `GOOGLE_APPLICATION_CREDENTIALS` pointing to a GCP service account key, or run `gcloud auth application-default login`.
+
 ### Python ingestion (`ingestion/`)
 
 ```bash
-pip install -r requirements.txt  # if present, else install manually
-python ingest_workforce_bronze.py
+pip install pandas faker google-cloud-bigquery google-cloud-storage requests "pandas-gbq>=0.26.1" pyarrow db-dtypes
+
+OXR_APP_ID=<your_key> python ingest_workforce_bronze.py
 ```
+
+`OXR_APP_ID` is required — it fetches monthly FX rates from OpenExchangeRates. Falls back to hardcoded defaults if the API call fails (rows get `fx_source = 'FALLBACK'`).
 
 ### Data quality audit (`data_quality_audits/`)
 
 ```bash
 python validate_stg_timesheets.py
 ```
-
-Authentication requires `GOOGLE_APPLICATION_CREDENTIALS` or `GOOGLE_CLOUD_KEYFILE_JSON` env var pointing to a GCP service account key.
 
 ## Architecture
 
@@ -64,8 +84,10 @@ Authentication requires `GOOGLE_APPLICATION_CREDENTIALS` or `GOOGLE_CLOUD_KEYFIL
 | Layer | Schema | Materialization | Location |
 |-------|--------|-----------------|----------|
 | Bronze | `bronze_layer` | Raw BigQuery table | `ingestion/` Python ETL |
-| Silver | `silver_layer` | Table | `models/staging/hris/` |
+| Silver | `silver_layer` | View* | `models/staging/hris/` |
 | Gold | `gold_layer` | Tables | `models/marts/hris/` |
+
+\* `stg_hris__timesheets` has model-level `materialized = 'view'` which overrides the project-level `+materialized: table` in `dbt_project.yml`. All gold mart models are tables.
 
 ### dbt Project Structure
 
@@ -73,7 +95,7 @@ Authentication requires `GOOGLE_APPLICATION_CREDENTIALS` or `GOOGLE_CLOUD_KEYFIL
 workforce_analytics/
 ├── models/
 │   ├── staging/hris/
-│   │   ├── stg_hris__timesheets.sql   # Primary 713-line Silver transform
+│   │   ├── stg_hris__timesheets.sql   # Primary 713-line Silver transform (4-CTE pipeline)
 │   │   ├── stg_hris__timesheets.yml   # dbt tests + source freshness
 │   │   └── sources.yml                # bronze_layer.raw_hris_timesheets_v1
 │   └── marts/hris/
@@ -101,18 +123,26 @@ workforce_analytics/
 
 **Schema name macro:** `macros/generate_schema_name.sql` overrides dbt's default schema naming to prevent `dataset_silver_layer` double-prefixing. When adding new models, target schemas are set in `dbt_project.yml` under `+schema:`.
 
-**Seeds go to silver_layer:** The `dbt seed` step is configured in `dbt_project.yml` with `+schema: silver_layer`. The GitHub Actions pipeline seeds before `dbt run`.
+**Seeds go to silver_layer:** The `dbt seed` step is configured in `dbt_project.yml` with `+schema: silver_layer`. The GitHub Actions pipeline seeds before `dbt run`. Both seeds are actively consumed:
+- `market_mapping` — joined in `dim_locations` to resolve `market_segment`; uses full ISO country names to match Silver layer output
+- `skill_categories` — joined in `dim_skills_bridge` to populate `skill_categories` (STRING_AGG of capability labels per skill)
 
-**Silver layer materialization:** `stg_hris__timesheets` is materialized as a `table` (not view) because it processes 3.7M rows with 22+ string corrections. All other staging models default to views.
+**Alphanumeric corruption:** The raw HRIS data contains OCR-like corruption (e.g., `"1"` → `"I"`, `"0"` → `"O"`). The Silver model cleans this with a 4-CTE pipeline: `trim_nullify` → `fix_text_corruption` → `standardize` → final SELECT. The Python audit in `data_quality_audits/validate_stg_timesheets.py` independently validates this.
 
-**Alphanumeric corruption:** The raw HRIS data contains OCR-like corruption (e.g., `"1"` → `"I"`, `"0"` → `"O"`). The Silver model has explicit CASE WHEN blocks to fix these in categorical fields. The Python audit in `data_quality_audits/validate_stg_timesheets.py` independently validates this.
+**Correction records:** ~50,908 rows have negative hours (correction entries). These are preserved with an `is_correction` flag in Silver and properly handled in `fct_timesheets`.
 
-**Correction records:** ~50,908 rows have negative hours (correction entries). These are preserved with a `is_correction` flag in Silver and properly handled in `fct_timesheets`.
+**Surrogate keys in fct_timesheets:** Use `FARM_FINGERPRINT` (native BigQuery), not `dbt_utils.generate_surrogate_key`. Dimensions use `dbt_utils.generate_surrogate_key`.
+
+**Silver model strict business rules — do NOT change these:**
+- `original_timesheet_id` → never imputed; NULL is a valid factual state
+- `project_name` → no digit-to-letter regex (contains valid values like `'24/7'`, `'3rdgeneration'`)
+- Negative hours → keep as-is (valid correction records for Gold netting)
+- `utilization_pct` → stored as 0–1 decimal scale; do NOT multiply by 100
 
 ### CI/CD Pipelines (`.github/workflows/`)
 
 **`dbt_pipeline.yml`** — triggers on push to `main`, PRs, or manual dispatch:
-1. Authenticates to GCP via `GOOGLE_CLOUD_KEYFILE_JSON` secret
+1. Authenticates to GCP via `GCP_CREDENTIALS` secret
 2. `dbt seed` → `dbt run` → `dbt test`
 
 **`bronze_ingestion.yml`** — runs daily at 00:00 UTC or manual dispatch:
@@ -120,7 +150,7 @@ workforce_analytics/
 2. Runs `ingestion/ingest_workforce_bronze.py`
 3. Posts Slack webhook alert (via `SLACK_WEBHOOK_URL` secret)
 
-Required GitHub secrets: `GOOGLE_CLOUD_KEYFILE_JSON`, `SLACK_WEBHOOK_URL`, `DBT_PROJECT_ID`, `DBT_DATASET`.
+Required GitHub secrets: `GCP_CREDENTIALS`, `GCP_PROJECT_ID`, `OXR_APP_ID`, `SLACK_WEBHOOK_URL`.
 
 ## dbt Packages
 
@@ -134,4 +164,4 @@ dbt tests are defined in `.yml` files alongside models:
 - `accepted_values` for all categorical enums (employment_type, project_type, client_segment, currency, etc.)
 - Custom business-rule tests for financial consistency
 
-The standalone Python audit (`data_quality_audits/validate_stg_timesheets.py`) validates a sample of the Silver layer independently of dbt and is not part of the CI pipeline — it's run manually against local samples (excluded from version control via `.gitignore`).
+The standalone Python audit (`data_quality_audits/validate_stg_timesheets.py`) validates a sample of the Silver layer independently of dbt and is not part of the CI pipeline — run manually against local samples (excluded from version control via `.gitignore`).

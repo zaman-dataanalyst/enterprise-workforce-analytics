@@ -36,4 +36,21 @@ To achieve 100% data reliability, a standalone Python suite (`scripts/validate_s
 ---
 
 ## 🥇 Phase 3: Gold Layer (Marts & Star Schema)
-*(Work in Progress - Building Dimension and Fact tables for PowerBI/Tableau integration...)*
+
+The Gold layer implements a **Kimball-style star schema** optimised for Power BI DirectQuery and Import modes.
+
+### Dimension Tables
+| Model | Grain | Key |
+|-------|-------|-----|
+| `dim_employees` | One row per employee | `employee_key` |
+| `dim_clients` | One row per client | `client_key` |
+| `dim_projects` | One row per project | `project_key` |
+| `dim_locations` | One row per country–city pair | `location_key` |
+| `dim_date` | One row per calendar date | `date_key` |
+| `dim_activity_metadata` | One row per activity-type combination | `activity_key` |
+| `dim_skills_bridge` | One row per employee–skill pair | `bridge_key` |
+
+### Fact Table
+`fct_timesheets` — central grain: one row per timesheet entry. Holds financial metrics (`revenue_usd`, `cost_usd`, `profit_usd`, `stable_cost_usd`, `stable_profit_usd`), utilisation KPIs, surrogate foreign keys to all dimensions, and a `productivity_segment` derived column.
+
+Surrogate keys use `FARM_FINGERPRINT` (native BigQuery) for deterministic, collision-resistant hashing without an external dependency.
