@@ -428,7 +428,7 @@ standardize_categoricals AS (
             WHEN REGEXP_CONTAINS(LOWER(TRIM(REGEXP_REPLACE(designation, r'[0-9]', 'i'))), r'data.*engineer|engineer.*data') THEN 'DATA ENGINEER'
             WHEN REGEXP_CONTAINS(LOWER(TRIM(REGEXP_REPLACE(designation, r'[0-9]', 'i'))), r'data.*analyst|analyst')          THEN 'DATA ANALYST'
             WHEN REGEXP_CONTAINS(LOWER(TRIM(REGEXP_REPLACE(designation, r'[0-9]', 'i'))), r'qa.*engineer|quality')            THEN 'QA ENGINEER'
-            WHEN REGEXP_CONTAINS(LOWER(TRIM(REGEXP_REPLACE(designation, r'[0-9]', 'i'))), r'bi.*dev|business.*intel')         THEN 'BI DEVELOPER'
+            WHEN REGEXP_CONTAINS(LOWER(TRIM(REGEXP_REPLACE(designation, r'[0-9]', 'i'))), r'bi.*d[ae]v|business.*intel')         THEN 'BI DEVELOPER'
             WHEN REGEXP_CONTAINS(LOWER(TRIM(REGEXP_REPLACE(designation, r'[0-9]', 'i'))), r'data.*sci|scientist')             THEN 'DATA SCIENTIST'
             ELSE COALESCE(UPPER(TRIM(designation)), 'UNKNOWN')
         END AS designation,
