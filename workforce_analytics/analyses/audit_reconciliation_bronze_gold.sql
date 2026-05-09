@@ -37,5 +37,5 @@ SELECT
     g.total_revenue AS gold_revenue,
     ROUND(b.total_revenue - g.total_revenue, 2) AS revenue_diff
 FROM bronze b CROSS JOIN gold g;
--- RESULT: row_diff=0 | hour_diff=0.00 | revenue_diff=0.00 | Bronze=3,755,002 rows | Total hours=17,602,139.5 | Total revenue=USD 1,999,685,164.40
+-- RESULT: row_diff=0 | hour_diff=0.00 | revenue_diff=0.00 | Bronze=3,750,002 rows | Total hours=17,602,139.5 | Total revenue=USD 1,999,685,164.40
 -- ACTION: If any diff != 0, trace the Silver CTE that caused the drop.

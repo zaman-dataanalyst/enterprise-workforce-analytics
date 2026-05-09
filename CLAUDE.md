@@ -129,7 +129,7 @@ workforce_analytics/
 
 **Alphanumeric corruption:** The raw HRIS data contains OCR-like corruption (e.g., `"1"` → `"I"`, `"0"` → `"O"`). The Silver model cleans this with a 4-CTE pipeline: `trim_nullify` → `fix_text_corruption` → `standardize` → final SELECT. The Python audit in `data_quality_audits/validate_stg_timesheets.py` independently validates this.
 
-**Correction records:** ~50,908 rows have negative hours (correction entries). These are preserved with an `is_correction` flag in Silver and properly handled in `fct_timesheets`.
+**Correction records:** ~51,534 rows have negative hours (correction entries). These are preserved with an `is_correction` flag in Silver and properly handled in `fct_timesheets`.
 
 **Surrogate keys in fct_timesheets:** Use `FARM_FINGERPRINT` (native BigQuery), not `dbt_utils.generate_surrogate_key`. Dimensions use `dbt_utils.generate_surrogate_key`.
 

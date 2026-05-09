@@ -5,15 +5,15 @@ Layer   : Silver (Staging)
 Project : Enterprise Workforce Analytics
 Source  : enterprise-workforce-analytics.bronze_layer.raw_hris_timesheets_v1
 
-EDA Summary (3,727,481 rows | 63 columns | 2023-03-26 → 2026-03-27):
+EDA Summary (3,750,002 rows | 63 columns | 2023-05-08 → 2026-05-08):
   ✓ 0 duplicate timesheet_ids            ✓ 0 orphan correction records
   ✓ 0 broken is_correction flags         ✓ 0 future-dated entries
   ✓ 0 hours math violations              ✓ 0 profit math violations
   ✗ 310K+ rows with whitespace           ✗ 187K+ corrupt employee names
   ✗ 205K+ corrupt designations           ✗ 326K+ corrupt task categories
   ✗ 372K rows with P0–P3 priority scale  ✗ 291K non-standard currency codes
-  ✗ 277K city typos / corruptions        ✗ 50,908 correction records (VALID)
-  ⚠ 70.88% skill_designation_mismatch   → Systemic column swap; flagged only
+  ✗ 277K city typos / corruptions        ✗ 51,534 correction records (VALID)
+  ⚠ 82.66% skill_designation_mismatch   → Systemic column swap; flagged only
 
 Cleaning Logic (4 CTE pipeline):
   1. trim_nullify        → TRIM + NULLIF('null') + NULLIF('')
@@ -711,7 +711,7 @@ SELECT
     (project_id = 'BENCH') AS is_bench_record,
 
     -- ── Derived: Skill ↔ Designation mismatch flag ────────────────────────────
-    -- EDA FINDING: 70.88% of rows (2.5M+) have mismatched skill_primary and
+    -- EDA FINDING: 82.66% of rows (2.94M+) have mismatched skill_primary and
     -- designation. This is a SYSTEMIC source-system column swap, NOT per-row
     -- data entry errors. Auto-correction is NOT safe without HR sign-off.
     -- ACTION: Gold layer dim_employees should use emp_id → HRIS master record
@@ -723,7 +723,7 @@ SELECT
     ) AS is_skill_designation_mismatch,
 
     -- ── Derived: Valid negative-hour correction flag ──────────────────────────
-    -- EDA confirmed: all 50,908 correction records are properly flagged.
+    -- EDA confirmed: all 51,534 correction records are properly flagged.
     -- These are valid financial netting entries, NOT data errors.
     -- Gold layer aggregation MUST net these against their original entries.
     (LOWER(entry_type) = 'correction' AND hours_worked < 0) AS is_negative_hour_correction

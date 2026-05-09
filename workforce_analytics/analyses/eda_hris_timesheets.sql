@@ -493,7 +493,7 @@ FROM `enterprise-workforce-analytics.bronze_layer.raw_hris_timesheets_v1`;
 -- ACTION: Data is structurally sound. Proceed without applying capping rules.
 
 -- 7.3 Negative hours breakdown 
--- WHY: Investigate the 50,908 rows with negative hours to see if they are valid.
+-- WHY: Investigate the 51,534 rows with negative hours to see if they are valid.
 -- IMPACT: If deleted, original erroneous timesheets will remain uncorrected in the warehouse.
 SELECT
     entry_type,

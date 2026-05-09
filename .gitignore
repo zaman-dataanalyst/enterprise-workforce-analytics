@@ -22,3 +22,8 @@ audit_results.txt
 # 4. OS/System Generated Artifacts
 .DS_Store
 Thumbs.db
+
+# 5. GCP Service Account Keys (CRITICAL — never commit)
+*-[a-f0-9]*[a-f0-9].json
+service_account*.json
+gcp_key*.json

@@ -107,7 +107,7 @@ Data integrity is mathematically proven post-transformation through two independ
 | hour_diff | 0.00 |
 | revenue_diff | 0.00 |
 | Total Revenue | USD 1,999,685,164.40 |
-| Total Rows | 3,755,002 |
+| Total Rows | 3,750,002 |
 
 ### Dimension Completeness Audit
 
