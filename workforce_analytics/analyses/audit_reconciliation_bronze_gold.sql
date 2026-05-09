@@ -11,8 +11,6 @@ PURPOSE  : Verify zero data loss during Bronze → Silver → Gold transformatio
 
 -- WHY: Any row dropped in transformation = missing employee records or revenue.
 -- IMPACT: 1 missing row = incorrect P&L, headcount, or utilization reporting.
--- RESULT: row_diff=0, hour_diff=0.00, revenue_diff=0.00 confirmed.
--- ACTION: If any diff != 0, trace the Silver CTE that caused the drop.
 
 WITH bronze AS (
     SELECT 
@@ -39,3 +37,5 @@ SELECT
     g.total_revenue AS gold_revenue,
     ROUND(b.total_revenue - g.total_revenue, 2) AS revenue_diff
 FROM bronze b CROSS JOIN gold g;
+-- RESULT: row_diff=0 | hour_diff=0.00 | revenue_diff=0.00 | Bronze=3,755,002 rows | Total hours=17,602,139.5 | Total revenue=USD 1,999,685,164.40
+-- ACTION: If any diff != 0, trace the Silver CTE that caused the drop.
