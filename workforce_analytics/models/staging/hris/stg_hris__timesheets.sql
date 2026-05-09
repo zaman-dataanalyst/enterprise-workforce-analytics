@@ -357,7 +357,6 @@ standardize_categoricals AS (
         client_id,
         work_date,
         employee_name,
-        designation,
         seniority_level,
         department,
         cost_center,
@@ -423,6 +422,16 @@ standardize_categoricals AS (
             WHEN 'TERMINATED' THEN 'INACTIVE'
             ELSE COALESCE(UPPER(TRIM(employment_status)), 'UNKNOWN')
         END AS employment_status,
+
+        -- ── Designation (5 canonical roles) ──────────────────────────────────
+        CASE
+            WHEN REGEXP_CONTAINS(LOWER(TRIM(REGEXP_REPLACE(designation, r'[0-9]', 'i'))), r'data.*engineer|engineer.*data') THEN 'DATA ENGINEER'
+            WHEN REGEXP_CONTAINS(LOWER(TRIM(REGEXP_REPLACE(designation, r'[0-9]', 'i'))), r'data.*analyst|analyst')          THEN 'DATA ANALYST'
+            WHEN REGEXP_CONTAINS(LOWER(TRIM(REGEXP_REPLACE(designation, r'[0-9]', 'i'))), r'qa.*engineer|quality')            THEN 'QA ENGINEER'
+            WHEN REGEXP_CONTAINS(LOWER(TRIM(REGEXP_REPLACE(designation, r'[0-9]', 'i'))), r'bi.*dev|business.*intel')         THEN 'BI DEVELOPER'
+            WHEN REGEXP_CONTAINS(LOWER(TRIM(REGEXP_REPLACE(designation, r'[0-9]', 'i'))), r'data.*sci|scientist')             THEN 'DATA SCIENTIST'
+            ELSE COALESCE(UPPER(TRIM(designation)), 'UNKNOWN')
+        END AS designation,
 
         -- ── Project Type (9 variants → 3 canonical values) ───────────────────
         CASE UPPER(TRIM(project_type))
