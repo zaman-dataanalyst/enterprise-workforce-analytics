@@ -230,10 +230,15 @@ models:
 
       - name: month_year_sort
         description: >
-          Integer in YYYYMM format (e.g., 202401). 
-          Used exclusively as the sort column for month_name 
-          in Power BI visuals to enforce chronological ordering. 
+          Integer in YYYYMM format (e.g., 202401).
+          Used exclusively as the sort column for month_name
+          in Power BI visuals to enforce chronological ordering.
           PL-300 best practice: never display this column directly.
+
+      - name: month_start_date
+        description: "First day of each month derived from year and month_num. Used for continuous monthly time-series axis in Power BI."
+        tests:
+          - not_null
 
       - name: is_weekend
         description: >
