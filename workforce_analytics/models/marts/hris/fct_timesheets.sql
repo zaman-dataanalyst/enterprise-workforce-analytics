@@ -31,7 +31,7 @@ SELECT
     -- FIXED: Safe Burnout Logic
     work_date,
 
-    FARM_FINGERPRINT(CAST(work_date AS STRING)) AS date_key,
+    CAST(FORMAT_DATE('%Y%m%d', work_date) AS INT64) AS date_key,
     FARM_FINGERPRINT(
         CONCAT(location_country, COALESCE(location_city, 'UNKNOWN'))
     ) AS location_key,

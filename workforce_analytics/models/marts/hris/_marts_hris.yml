@@ -200,9 +200,10 @@ models:
     columns:
       - name: date_key
         description: >
-          Surrogate primary key generated via FARM_FINGERPRINT on the 
-          date string. Used as the foreign key in fct_timesheets 
-          for fast integer-based joining (Kimball standard).
+          Surrogate primary key in YYYYMMDD integer format
+          (e.g., 20240115). Generated via CAST(FORMAT_DATE('%Y%m%d', date) AS INT64).
+          Used as the foreign key in fct_timesheets for fast integer-based joining.
+          YYYYMMDD avoids FARM_FINGERPRINT Int64 overflow in the Power BI ADBC connector.
         tests:
           - unique
           - not_null
@@ -438,9 +439,10 @@ models:
 
       - name: date_key
         description: >
-          Foreign key joining to dim_date.date_key. 
-          Generated via identical FARM_FINGERPRINT(CAST(work_date AS STRING)) 
-          logic to guarantee referential integrity.
+          Foreign key joining to dim_date.date_key.
+          Generated via identical CAST(FORMAT_DATE('%Y%m%d', work_date) AS INT64)
+          logic to guarantee referential integrity. YYYYMMDD integer format
+          avoids FARM_FINGERPRINT Int64 overflow in the Power BI ADBC connector.
         tests:
           - not_null
           - relationships:

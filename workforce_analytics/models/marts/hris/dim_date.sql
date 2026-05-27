@@ -10,7 +10,7 @@ WITH date_spine AS (
 
 SELECT
     `date` AS work_date,
-    FARM_FINGERPRINT(CAST(`date` AS STRING)) AS date_key,
+    CAST(FORMAT_DATE('%Y%m%d', `date`) AS INT64) AS date_key,
     EXTRACT(YEAR FROM `date`) AS year,
     EXTRACT(QUARTER FROM `date`) AS quarter,
     EXTRACT(MONTH FROM `date`) AS month_num,
