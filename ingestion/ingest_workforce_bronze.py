@@ -521,7 +521,8 @@ def run_ultimate_pipeline():
             hourly_rate     = BILLING_MATRIX[emp["Skill"]][emp["Seniority"]] * REGION_MULT[emp["Reg"]] if is_billable else 0.0
             cost_rate_local = round(emp["Sal"] / 160, 2)
             cost_usd        = round((cost_rate_local / cur_rate) * hrs_wrk, 2)
-            rev_usd         = round(hrs_wrk * hourly_rate, 2)
+            monthly_mult    = MONTHLY_REVENUE_MULT.get(m_key, 1.0) * random.uniform(0.92, 1.08)
+            rev_usd         = round(hrs_wrk * hourly_rate * monthly_mult, 2)
             profit_usd      = round(rev_usd - cost_usd, 2)
 
             bill_hrs  = hrs_wrk if is_billable else 0.0
