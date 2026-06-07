@@ -24,8 +24,8 @@ HISTORY_START = datetime(2023, 1, 1).date()
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 fake = Faker()
-random.seed(42)           # Bug 1 — reproducible synthetic data
-fake.seed_instance(42)    # Bug 1 — reproducible faker output
+# random.seed(42)           # REMOVED: causes uniform synthetic data — no variance
+# fake.seed_instance(42)    # REMOVED: causes uniform faker output — no variance
 
 def get_clients():
     if os.path.exists("gcp-key.json"):
@@ -187,6 +187,36 @@ BILLING_MATRIX = {
 REGION_MULT = {
     "USA": 1.5, "CA": 1.4, "UK": 1.3, "DE": 1.3,
     "UAE": 1.2, "SA": 1.2, "SG": 1.2, "PK": 0.5, "IN": 0.55
+}
+
+# ── Monthly Revenue Variance Multipliers ─────────────────────────────────────
+MONTHLY_REVENUE_MULT = {
+    "2023-06": 0.78, "2023-07": 0.75, "2023-08": 0.82,
+    "2023-12": 1.22, "2024-03": 0.85, "2024-06": 1.18,
+    "2024-09": 1.28, "2024-12": 1.30, "2025-01": 0.72,
+    "2025-06": 0.80, "2026-01": 0.68,
+}
+
+# ── Bench Rate Variance by Designation ───────────────────────────────────────
+BENCH_PROB_BY_DESIGNATION = {
+    "Data Scientist": 0.08,
+    "Data Engineer":  0.12,
+    "Data Analyst":   0.14,
+    "BI Developer":   0.18,
+    "QA Engineer":    0.28,
+}
+BENCH_PROB_BY_SENIORITY = {
+    "Junior": 1.40,
+    "Senior": 0.90,
+    "Lead":   0.60,
+}
+
+# ── Department Allocation Weights ─────────────────────────────────────────────
+DEPT_ALLOC_WEIGHTS = {
+    "Data Engineering":       [0.10, 0.40, 0.50],
+    "Analytics & BI":         [0.20, 0.50, 0.30],
+    "Cloud & Infrastructure": [0.30, 0.55, 0.15],
+    "Data Science & AI":      [0.40, 0.50, 0.10],
 }
 
 def seed_enterprise_dimensions():
