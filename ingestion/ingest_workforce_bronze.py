@@ -547,7 +547,7 @@ def run_ultimate_pipeline():
                 corr_h  = -(round(random.uniform(0.5, hrs_wrk) * 2) / 2)
                 cb_hrs  = corr_h if is_billable else 0.0
                 cnb_hrs = corr_h if not is_billable else 0.0
-                cr_usd  = round(corr_h * hourly_rate, 2)
+                cr_usd  = round(corr_h * hourly_rate * monthly_mult, 2)
                 cc_usd  = round((cost_rate_local / cur_rate) * corr_h, 2)
                 cp_usd  = round(cr_usd - cc_usd, 2)
                 buffer.append(build_row(
