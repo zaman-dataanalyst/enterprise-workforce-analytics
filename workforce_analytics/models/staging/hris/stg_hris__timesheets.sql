@@ -266,11 +266,12 @@ fix_text_corruption AS (
 
         -- ── department ────────────────────────────────────────────────────────
         COALESCE(
-            REPLACE(REPLACE(REPLACE(
+            REPLACE(REPLACE(REPLACE(REPLACE(
                 UPPER(REGEXP_REPLACE(department, r'[0-9]', 'I')),
-            'ENGINAERING', 'ENGINEERING'),
-            'SCIANCE',     'SCIENCE'),
-            'ANALYTACS',   'ANALYTICS')
+            'ENGINAERING',  'ENGINEERING'),
+            'SCIANCE',      'SCIENCE'),
+            'ANALYTACS',    'ANALYTICS'),
+            'INFRASTRUCTURA', 'INFRASTRUCTURE')
         , 'UNKNOWN') AS department,
 
         -- ── task_category ─────────────────────────────────────────────────────
