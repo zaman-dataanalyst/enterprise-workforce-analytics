@@ -470,7 +470,8 @@ def run_ultimate_pipeline():
 
             is_billable = (p_id != "BENCH")
             # Bug 10 — bench employees always alloc_pct=0.0; hours not scaled by alloc
-            alloc_pct = 0.0 if p_id == "BENCH" else random.choices([0.6, 0.8, 1.0], weights=[0.2, 0.3, 0.5])[0]
+            dept_weights = DEPT_ALLOC_WEIGHTS.get(emp["Dept"], [0.2, 0.3, 0.5])
+            alloc_pct = 0.0 if p_id == "BENCH" else random.choices([0.6, 0.8, 1.0], weights=dept_weights)[0]
             cap_hrs   = 0.0 if (is_weekend or is_holiday) else 8.0
             if p_id == "BENCH":
                 base_hrs = random.choice([2.0, 3.0, 4.0])
