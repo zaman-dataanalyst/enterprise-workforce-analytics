@@ -273,10 +273,23 @@ models:
 
       - name: market_segment
         description: >
-          Tiered market classification based on country economic region: 
-          TIER 1 (US, UK, Germany, etc.), TIER 2 (UAE, Saudi Arabia, Qatar), 
-          TIER 3 (Pakistan, India, etc.). Used for geographic 
+          Tiered market classification based on country economic region:
+          TIER 1 (US, UK, Germany, etc.), TIER 2 (UAE, Saudi Arabia, Qatar),
+          TIER 3 (Pakistan, India, etc.). Used for geographic
           profitability benchmarking.
+
+      - name: market_segment_sort
+        description: >
+          Integer sort key for market_segment to enforce correct TIER ordering
+          in Power BI. Values: TIER 1=1, TIER 2=2, TIER 3=3, else=99.
+          Use as Sort by Column for market_segment in Power BI data model.
+
+      - name: macro_region
+        description: >
+          Derived geographic macro-region grouping.
+          Values: AMER (USA, Canada), EMEA (UK, Germany, Netherlands, Sweden),
+          APAC (Pakistan, India, Singapore, Australia), MEA (UAE, Saudi Arabia,
+          Qatar), UNKNOWN (unmapped).
 
   # ─────────────────────────────────────────────────────────────
 
