@@ -458,7 +458,15 @@ def run_ultimate_pipeline():
 
             # Bug 14 — use pre-computed dict instead of inner list comprehension
             eligible = eligible_by_skill.get(emp["Skill"], [])
-            p_id = "BENCH" if (is_weekend or is_holiday or not eligible) else random.choice(eligible)
+            if is_weekend or is_holiday or not eligible:
+                p_id = "BENCH"
+            else:
+                bench_prob = (
+                    BENCH_PROB_BY_DESIGNATION.get(emp["Skill"], 0.16)
+                    * BENCH_PROB_BY_SENIORITY.get(emp["Seniority"], 1.0)
+                )
+                bench_prob = min(bench_prob, 0.90)
+                p_id = "BENCH" if random.random() < bench_prob else random.choice(eligible)
 
             is_billable = (p_id != "BENCH")
             # Bug 10 — bench employees always alloc_pct=0.0; hours not scaled by alloc
