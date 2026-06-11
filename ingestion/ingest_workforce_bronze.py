@@ -197,6 +197,12 @@ MONTHLY_REVENUE_MULT = {
     "2025-06": 0.80, "2026-01": 0.68,
 }
 
+BUSINESS_EVENTS = {
+    "2024-05": (0.35, "PKR devaluation peak — client payment delays"),
+    "2025-03": (1.95, "Enterprise recovery — 3 new contracts signed"),
+}
+MONTHLY_REVENUE_MULT.update({k: v[0] for k, v in BUSINESS_EVENTS.items()})
+
 # ── Bench Rate Variance by Designation ───────────────────────────────────────
 BENCH_PROB_BY_DESIGNATION = {
     "Data Scientist": 0.08,
