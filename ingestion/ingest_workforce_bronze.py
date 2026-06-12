@@ -198,7 +198,7 @@ MONTHLY_REVENUE_MULT = {
 }
 
 BUSINESS_EVENTS = {
-    "2024-05": (0.35, "PKR devaluation peak — client payment delays"),
+    "2024-05": (0.12, "PKR devaluation peak — severe client payment crisis"),
     "2025-03": (1.95, "Enterprise recovery — 3 new contracts signed"),
 }
 MONTHLY_REVENUE_MULT.update({k: v[0] for k, v in BUSINESS_EVENTS.items()})
