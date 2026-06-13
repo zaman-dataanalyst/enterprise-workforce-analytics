@@ -282,7 +282,7 @@ def seed_enterprise_dimensions():
         curr        = CURRENCY_MAP[reg]
         designation = random.choice(list(BILLING_MATRIX.keys()))
         dept        = random.choice(DEPT_MAP[designation])
-        skill       = random.choice(list(BILLING_MATRIX.keys()))
+        skill       = designation
         exp_years   = random.randint(1, 12)
         # Bug 6 — seniority derived from experience (not random)
         seniority   = "Junior" if exp_years < 3 else ("Senior" if exp_years <= 6 else "Lead")
