@@ -561,7 +561,13 @@ models:
 
       - name: is_bench_entry
         description: >
-          Boolean flag (TRUE when project_id = 'BENCH') identifying 
-          timesheet entries where the employee was on the bench 
-          (not assigned to a billable project). 
+          Boolean flag (TRUE when project_id = 'BENCH') identifying
+          timesheet entries where the employee was on the bench
+          (not assigned to a billable project).
           Used for bench cost analysis and capacity planning.
+
+      - name: bench_int
+        description: >
+          Integer representation of is_bench_entry.
+          1 = on bench, 0 = billable. Used for Python
+          visual average aggregation in Power BI.

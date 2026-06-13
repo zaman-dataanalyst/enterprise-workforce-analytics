@@ -60,5 +60,6 @@ SELECT
         revenue_usd
         - SAFE_DIVIDE(cost_local, NULLIF(monthly_avg_cost_fx_rate, 0))
     ) AS stable_profit_usd,
-    COALESCE(project_id = 'BENCH', FALSE) AS is_bench_entry
+    COALESCE(project_id = 'BENCH', FALSE) AS is_bench_entry,
+    CAST(COALESCE(project_id = 'BENCH', FALSE) AS INT64)        AS bench_int
 FROM monthly_rates
