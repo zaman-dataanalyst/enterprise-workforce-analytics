@@ -5,11 +5,11 @@
 
 A **Software Engineering** approach to analytics — strict version control, immutable raw data, tested transformations, and CI/CD — applied to a real business problem.
 
-[![Pipeline](https://img.shields.io/badge/Pipeline-Automated_CI%2FCD-4ECB71?style=flat-square)](#architecture)
-[![dbt](https://img.shields.io/badge/dbt-50_tests_passing-F5A623?style=flat-square)](#data-quality)
-[![BigQuery](https://img.shields.io/badge/BigQuery-Medallion-45B7D1?style=flat-square)](#architecture)
-[![Power BI](https://img.shields.io/badge/Power_BI-Import_Mode-F5A623?style=flat-square)](#the-dashboard)
-[![Modeling](https://img.shields.io/badge/Modeling-Kimball_Star_Schema-A8C4D8?style=flat-square)](#data-model)
+[![Pipeline](https://img.shields.io/badge/Pipeline-Automated_CI%2FCD-4ECB71?style=for-the-badge)](#architecture)
+[![dbt](https://img.shields.io/badge/dbt-50_tests_passing-F5A623?style=for-the-badge)](#data-quality)
+[![BigQuery](https://img.shields.io/badge/BigQuery-Medallion-45B7D1?style=for-the-badge)](#architecture)
+[![Power BI](https://img.shields.io/badge/Power_BI-Import_Mode-F5A623?style=for-the-badge)](#the-dashboard)
+[![Modeling](https://img.shields.io/badge/Modeling-Kimball_Star_Schema-A8C4D8?style=for-the-badge)](#data-model)
 
 </div>
 
@@ -17,7 +17,7 @@ A **Software Engineering** approach to analytics — strict version control, imm
 
 ## At a Glance
 
-| | |
+| Feature | Details |
 |---|---|
 | **What** | End-to-end analytics platform that predicts bench-cost risk & revenue for a staff-augmentation firm |
 | **Scale** | 3,750,002 rows · 5,000 employees · 9 countries · 3-year span |
