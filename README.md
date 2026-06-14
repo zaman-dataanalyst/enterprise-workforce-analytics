@@ -48,25 +48,9 @@ IT Staff Augmentation firms bill clients in **USD** but pay engineers in **PKR**
 
 ## Architecture
 
-```mermaid
-flowchart LR
-    API["🌐 OpenExchangeRates<br/>Live FX API"] --> ING["🐍 Python Ingestion<br/>nightly · GitHub Actions"]
-    ING --> BRONZE["🥉 Bronze<br/>raw · immutable"]
-    BRONZE --> SILVER["🥈 Silver<br/>4-CTE cleansing · dbt"]
-    SILVER --> GOLD["🥇 Gold<br/>Kimball Star Schema"]
-    GOLD --> BI["📊 Power BI<br/>DAX · sklearn"]
-
-    DBT["✅ 50 dbt tests<br/>+ independent audit"] -.validates.-> SILVER
-    DBT -.validates.-> GOLD
-
-    style API fill:#1A2B3C,stroke:#45B7D1,color:#fff
-    style ING fill:#1A2B3C,stroke:#F5A623,color:#fff
-    style BRONZE fill:#2A1E06,stroke:#CD7F32,color:#fff
-    style SILVER fill:#1A2B3C,stroke:#A8C4D8,color:#fff
-    style GOLD fill:#2A2206,stroke:#F5A623,color:#fff
-    style BI fill:#1A2B3C,stroke:#4ECB71,color:#fff
-    style DBT fill:#0A1E0A,stroke:#4ECB71,color:#fff
-```
+<div align="center">
+  <img src="docs/assets/architecture.png" width="95%" alt="Data Pipeline Architecture"/>
+</div>
 
 Every night, **GitHub Actions** runs ingestion, which pulls the **actual historical USD/PKR rate per day** from the **OpenExchangeRates API** — real currency conversion, not an assumption. A chained `workflow_run` triggers the **dbt build** automatically. Zero manual intervention, end to end.
 
@@ -94,7 +78,9 @@ The raw export is deliberately messy (310K+ whitespace rows, 187K+ corrupt names
 
 ## Data Model
 
-![Star Schema — Power BI Model View](docs/assets/model_view_erd.png)
+<div align="center">
+  <img src="docs/assets/model_view_erd.png" width="90%" alt="Star Schema — Power BI Model View"/>
+</div>
 
 A clean **Kimball star schema**: `fct_timesheets` at the center, 7 conformed dimensions, enforced single-direction filtering and correct cardinality. The part most self-taught analysts skip — and the part that makes a model performant and trustworthy at 3.75M rows.
 
