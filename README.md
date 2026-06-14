@@ -122,17 +122,26 @@ A second system that doesn't trust the first — and proves the transformation l
 Three pages following the **Descriptive → Diagnostic → Predictive** analytics arc.
 
 ### Page 1 — CEO Executive View &nbsp;`Descriptive`
-![Page 1](docs/assets/page1_ceo.png)
+
+<div align="center">
+  <img src="docs/assets/page1_ceo.png" width="90%" alt="Page 1 — CEO Executive View"/>
+</div>
 
 Real-time KPIs (Revenue, Bench Cost, Utilization %, Headcount) with **MoM/YoY variance** and RAG formatting; revenue-vs-bench trend; revenue by region and department.
 
 ### Page 2 — Operations Root Cause &nbsp;`Diagnostic`
-![Page 2](docs/assets/page2_operations.png)
+
+<div align="center">
+  <img src="docs/assets/page2_operations.png" width="90%" alt="Page 2 — Operations Root Cause Analysis"/>
+</div>
 
 **AI Decomposition Tree** drilling bench cost (Market Tier → Department → Designation → Seniority); **FX volatility** correlated to revenue loss; performance matrix with RAG formatting; **anomaly detection** flagging the modeled 2024 devaluation crash.
 
 ### Page 3 — Predictive Risk & Forecast &nbsp;`Predictive` 🚧
-![Page 3](docs/assets/page3_predictive.png)
+
+<div align="center">
+  <img src="docs/assets/page3_predictive.png" width="90%" alt="Page 3 — Predictive Risk & Forecast"/>
+</div>
 
 - **Bench-Risk Drivers** — a custom **scikit-learn Logistic Regression** (frequency-weighted, **AUC-validated**) in a Power BI Python visual. Quantifies in log-odds which roles raise vs lower bench risk. A genuine classification model, not a `GROUP BY` relabeled as "ML".
 - **90-Day Revenue Forecast** — native ETS time-series with 95% confidence band and dynamic forecast-start marker.
