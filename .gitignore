@@ -26,4 +26,4 @@ Thumbs.db
 # 5. GCP Service Account Keys (CRITICAL — never commit)
 *-[a-f0-9]*[a-f0-9].json
 service_account*.json
-gcp_key*.json
+gcp_key*.jsonCLAUDE.md 
