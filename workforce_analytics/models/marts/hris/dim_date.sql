@@ -17,6 +17,7 @@ SELECT
     FORMAT_DATE('%B', `date`) AS month_name,
     CAST(FORMAT_DATE('%Y%m', `date`) AS INT64) AS month_year_sort,
     DATE_TRUNC(`date`, MONTH) AS month_start_date,
+    DATE_TRUNC(`date`, QUARTER) AS quarter_start_date,
     COALESCE(EXTRACT(DAYOFWEEK FROM `date`) IN (1, 7), FALSE)
         AS is_weekend
 FROM date_spine
