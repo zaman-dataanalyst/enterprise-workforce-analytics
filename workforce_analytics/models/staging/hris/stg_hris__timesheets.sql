@@ -222,8 +222,7 @@ fix_text_corruption AS (
         -- ══════════════════════════════════════════════════════════════════════
 
         -- ── employee_name ─────────────────────────────────────────────────────
-        COALESCE(
-            REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(
+        REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(
             REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(
             REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(
             REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(
@@ -247,8 +246,7 @@ fix_text_corruption AS (
             'BA1LAY',      'BAILEY'),      -- pre-regex form just in case
             'WHITA',       'WHITE'),
             'FISCHAR',     'FISCHER'),
-            'FARGUSON',    'FERGUSON')
-        , 'ANONYMOUS') AS employee_name,
+            'FARGUSON',    'FERGUSON') AS employee_name,
 
         -- ── designation ───────────────────────────────────────────────────────
         COALESCE(
