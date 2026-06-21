@@ -48,3 +48,8 @@ models:
 seeds:
   workforce_analytics:
     +schema: silver_layer
+    dim_security_access:
+      +schema: gold_layer
+      +column_types:
+        user_email: string
+        location_country: string
