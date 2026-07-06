@@ -495,7 +495,9 @@ standardize_categoricals AS (
 
         -- ── Location Country (Strict ISO-3166 Full Names) ────────────────────
         -- WHY: Full standard names are required for optimal Geocoding API rendering in BI tools.
-        CASE REGEXP_REPLACE(UPPER(TRIM(location_country)), r'\.', '')
+        -- r'[ \.]' strips both spaces and dots so full spaced names ('United States',
+        -- 'United Kingdom', 'Saudi Arabia') normalize to their no-space WHEN forms.
+        CASE REGEXP_REPLACE(UPPER(TRIM(location_country)), r'[ \.]', '')
             WHEN 'PK'            THEN 'Pakistan'
             WHEN 'PAK'           THEN 'Pakistan'
             WHEN 'PAKISTAN'      THEN 'Pakistan'
@@ -507,6 +509,7 @@ standardize_categoricals AS (
             WHEN 'UNITEDKINGDOM' THEN 'United Kingdom'
             WHEN 'UAE'           THEN 'United Arab Emirates'
             WHEN 'UAR'           THEN 'United Arab Emirates'
+            WHEN 'UNITEDARABEMIRATES' THEN 'United Arab Emirates'
             WHEN 'USA'           THEN 'United States'
             WHEN 'US'            THEN 'United States'
             WHEN 'UNITEDSTATES'  THEN 'United States'
@@ -538,7 +541,8 @@ standardize_categoricals AS (
         END AS location_country,
 
         -- ── Client Country (Strict ISO-3166 Full Names) ──────────────────────
-        CASE REGEXP_REPLACE(UPPER(TRIM(client_country)), r'\.', '')
+        -- r'[ \.]' mirrors the location_country normalization: strips spaces and dots.
+        CASE REGEXP_REPLACE(UPPER(TRIM(client_country)), r'[ \.]', '')
             WHEN 'PK'            THEN 'Pakistan'
             WHEN 'PAK'           THEN 'Pakistan'
             WHEN 'PAKISTAN'      THEN 'Pakistan'
@@ -550,6 +554,7 @@ standardize_categoricals AS (
             WHEN 'UNITEDKINGDOM' THEN 'United Kingdom'
             WHEN 'UAE'           THEN 'United Arab Emirates'
             WHEN 'UAR'           THEN 'United Arab Emirates'
+            WHEN 'UNITEDARABEMIRATES' THEN 'United Arab Emirates'
             WHEN 'USA'           THEN 'United States'
             WHEN 'US'            THEN 'United States'
             WHEN 'UNITEDSTATES'  THEN 'United States'
